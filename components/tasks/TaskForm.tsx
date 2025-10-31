@@ -5,7 +5,7 @@ import Modal from '../ui/Modal';
 interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: Task) => void;
+  onSave: (task: Omit<Task, 'id' | 'status' | 'createdAt'> & { id?: string }) => void;
   task: Task | null;
   projects: Project[];
   customers: Customer[];
@@ -43,8 +43,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const taskData: Task = {
-      id: task ? task.id : '',
+    const taskData = {
+      id: task ? task.id : undefined,
       title,
       description,
       type,
@@ -52,8 +52,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
       projectId,
       dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
       priority,
-      status: task ? task.status : TaskStatus.TODO,
-      createdAt: task ? task.createdAt : new Date().toISOString(),
     };
     onSave(taskData);
   };

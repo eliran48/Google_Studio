@@ -44,7 +44,10 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
                   <input
                     type="checkbox"
                     checked={task.status === TaskStatus.DONE}
-                    onChange={() => onToggleStatus(task.id)}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      onToggleStatus(task.id);
+                    }}
                     className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer mt-1 flex-shrink-0"
                     aria-labelledby={`task-title-${task.id}`}
                   />

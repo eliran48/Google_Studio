@@ -1,16 +1,17 @@
 import React from 'react';
 import { Project, Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
-import { EditIcon } from '../ui/Icons';
+import { EditIcon, TrashIcon } from '../ui/Icons';
 
 interface ProjectsViewProps {
   projects: Project[];
   tasks: Task[];
   onProjectSelect: (projectId: string) => void;
   onEditProject: (project: Project) => void;
+  onDeleteProject: (projectId: string, projectTitle: string) => void;
 }
 
-const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject }) => {
+const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject }) => {
   const getProjectStats = (projectId: string) => {
     const projectTasks = tasks.filter(t => t.projectId === projectId);
     const completedTasks = projectTasks.filter(t => t.status === TaskStatus.DONE).length;
@@ -32,17 +33,28 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
             const { totalTasks, progress } = getProjectStats(project.id);
             return (
               <Card key={project.id} className="group hover:shadow-lg hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col" >
-                <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow">
-                    <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start">
+                    <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow">
                         <h3 className="text-xl font-bold mb-2 text-indigo-600 dark:text-indigo-400 flex-1 break-words pr-2">{project.title}</h3>
+                    </div>
+                    <div className="flex items-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                             onClick={(e) => { e.stopPropagation(); onEditProject(project); }} 
-                            className="text-gray-400 hover:text-indigo-600 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-gray-400 hover:text-indigo-600 p-1 rounded-full"
                             aria-label={`ערוך פרויקט ${project.title}`}
                         >
                             <EditIcon className="w-5 h-5" />
                         </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id, project.title); }} 
+                            className="text-gray-400 hover:text-red-600 p-1 rounded-full"
+                            aria-label={`מחק פרויקט ${project.title}`}
+                        >
+                            <TrashIcon className="w-5 h-5" />
+                        </button>
                     </div>
+                </div>
+                 <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow">
                     <p className="text-gray-600 dark:text-gray-300 mb-4 h-12 overflow-hidden">{project.description}</p>
                 </div>
                 <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ViewType, Task, Project, Customer, Idea, TaskStatus } from './types';
 import { db, auth } from './services/firebase';
-import { collection, getDocs, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 import Sidebar from './components/layout/Sidebar';
@@ -20,6 +20,7 @@ import IdeaForm from './components/ideas/IdeaForm';
 import LoginView from './components/views/LoginView';
 import CustomerForm from './components/customers/CustomerForm';
 import SpeedDial, { SpeedDialAction } from './components/ui/SpeedDial';
+import ConfirmationModal from './components/ui/ConfirmationModal';
 
 const App: React.FC = () => {
     const [view, setView] = useState<ViewType>('dashboard');
@@ -40,7 +41,10 @@ const App: React.FC = () => {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+    
+    const [pendingAction, setPendingAction] = useState<{ title: string; message: string; onConfirm: () => Promise<void> } | null>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -109,57 +113,70 @@ const App: React.FC = () => {
             console.error("Error signing out:", error);
         }
     };
-
-    const handleOpenNewTaskModal = () => {
-        setEditingTask(null);
-        setIsTaskModalOpen(true);
-    };
-
-    const handleEditTask = (task: Task) => {
-        setEditingTask(task);
-        setIsTaskModalOpen(true);
-    };
     
-    const handleOpenNewProjectModal = () => {
-        setEditingProject(null);
-        setIsProjectModalOpen(true);
+    // --- Modal Open/Close Handlers ---
+    const handleOpenNewTaskModal = () => { setEditingTask(null); setIsTaskModalOpen(true); };
+    const handleEditTask = (task: Task) => { setEditingTask(task); setIsTaskModalOpen(true); };
+    const handleOpenNewProjectModal = () => { setEditingProject(null); setIsProjectModalOpen(true); };
+    const handleEditProject = (project: Project) => { setEditingProject(project); setIsProjectModalOpen(true); };
+    const handleOpenNewCustomerModal = () => { setEditingCustomer(null); setIsCustomerModalOpen(true); };
+    const handleEditCustomer = (customer: Customer) => { setEditingCustomer(customer); setIsCustomerModalOpen(true); };
+    
+    // --- Confirmation Modal Logic ---
+    const handleConfirmAction = async () => {
+        if (pendingAction) {
+            await pendingAction.onConfirm();
+            setPendingAction(null);
+        }
     };
+    const handleCancelAction = () => setPendingAction(null);
 
-    const handleEditProject = (project: Project) => {
-        setEditingProject(project);
-        setIsProjectModalOpen(true);
-    };
-
-    const handleSaveTask = async (taskToSave: Task) => {
+    // --- Save Handlers ---
+    const handleSaveTask = async (taskToSave: Omit<Task, 'id' | 'status' | 'createdAt'> & { id?: string }) => {
         if (!user) return;
+        
+        const existingTask = taskToSave.id ? tasks.find(t => t.id === taskToSave.id) : null;
+
+        const taskWithMetadata: Task = {
+            id: existingTask?.id || '',
+            title: taskToSave.title,
+            description: taskToSave.description,
+            type: taskToSave.type,
+            customerId: taskToSave.customerId,
+            projectId: taskToSave.projectId,
+            dueDate: taskToSave.dueDate,
+            priority: taskToSave.priority,
+            status: existingTask?.status || TaskStatus.TODO,
+            createdAt: existingTask?.createdAt || new Date().toISOString(),
+        };
+
         setIsTaskModalOpen(false);
         setEditingTask(null);
+        
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id, ...taskData } = taskToSave;
+            const { id, ...taskData } = taskWithMetadata;
             
-            // Create a clean object for Firestore by removing undefined keys
             const firestoreData: { [key: string]: any } = {};
-            for (const key in taskData) {
-                if (taskData[key as keyof typeof taskData] !== undefined) {
+            Object.keys(taskData).forEach(key => {
+                 if (taskData[key as keyof typeof taskData] !== undefined) {
                     firestoreData[key] = taskData[key as keyof typeof taskData];
                 }
-            }
+            });
     
-            if (taskToSave.id) { // Existing task
-                const taskDocRef = doc(db, `users/${user.uid}/tasks`, taskToSave.id);
+            if (id) {
+                const taskDocRef = doc(db, `users/${user.uid}/tasks`, id);
                 await updateDoc(taskDocRef, firestoreData);
-                setTasks(prevTasks => prevTasks.map(t => t.id === taskToSave.id ? taskToSave : t));
-            } else { // New task
+                setTasks(prevTasks => prevTasks.map(t => t.id === id ? taskWithMetadata : t));
+            } else {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/tasks`), firestoreData);
-                const newTask = { ...taskToSave, id: docRef.id };
-                setTasks(prevTasks => [...prevTasks, newTask]);
+                setTasks(prevTasks => [...prevTasks, { ...taskWithMetadata, id: docRef.id }]);
             }
         } catch (error) {
             console.error("Error saving task:", error);
         }
     };
-
+    
     const handleToggleTaskStatus = async (taskId: string) => {
         if (!user) return;
         const task = tasks.find(t => t.id === taskId);
@@ -175,7 +192,18 @@ const App: React.FC = () => {
         }
     };
     
-    const handleSaveProject = async (projectToSave: Project) => {
+    const requestToggleTaskStatus = (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        const isCompleting = task.status !== TaskStatus.DONE;
+        setPendingAction({
+            title: isCompleting ? 'אישור השלמת משימה' : 'ביטול השלמת משימה',
+            message: `האם אתה בטוח שברצונך ${isCompleting ? 'לסמן את המשימה כהושלמה' : 'להחזיר את המשימה לביצוע'}?`,
+            onConfirm: () => handleToggleTaskStatus(taskId),
+        });
+    };
+    
+    const handleSaveProject = async (projectToSave: Omit<Project, 'id'> & { id?: string }) => {
         if (!user) return;
         setIsProjectModalOpen(false);
         setEditingProject(null);
@@ -184,50 +212,133 @@ const App: React.FC = () => {
             const { id, ...projectData } = projectToSave;
 
             const firestoreData: { [key: string]: any } = {};
-            for (const key in projectData) {
-                if (projectData[key as keyof typeof projectData] !== undefined) {
+            Object.keys(projectData).forEach(key => {
+                 if (projectData[key as keyof typeof projectData] !== undefined) {
                     firestoreData[key] = projectData[key as keyof typeof projectData];
                 }
-            }
+            });
 
-            if (projectToSave.id && projects.some(p => p.id === projectToSave.id)) { // Existing project
-                const projectDocRef = doc(db, `users/${user.uid}/projects`, projectToSave.id);
+            if (id) {
+                const projectDocRef = doc(db, `users/${user.uid}/projects`, id);
                 await updateDoc(projectDocRef, firestoreData);
-                setProjects(prev => prev.map(p => p.id === projectToSave.id ? projectToSave : p));
-            } else { // New project
+                setProjects(prev => prev.map(p => p.id === id ? { ...projectData, id } as Project : p));
+            } else {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), firestoreData);
-                const newProject = { ...projectToSave, id: docRef.id };
-                setProjects(prev => [...prev, newProject]);
+                setProjects(prev => [...prev, { ...projectData, id: docRef.id } as Project]);
             }
         } catch (error) {
             console.error("Error saving project:", error);
         }
     };
-    
-    const handleSaveIdea = async (ideaToSave: Idea) => {
+
+    const handleDeleteProject = async (projectId: string) => {
+        if (!user) return;
+
+        try {
+            const batch = writeBatch(db);
+            const projectDocRef = doc(db, `users/${user.uid}/projects`, projectId);
+            batch.delete(projectDocRef);
+
+            const tasksToUpdate = tasks.filter(t => t.projectId === projectId);
+            tasksToUpdate.forEach(task => {
+                const taskDocRef = doc(db, `users/${user.uid}/tasks`, task.id);
+                batch.update(taskDocRef, { projectId: undefined });
+            });
+
+            await batch.commit();
+
+            setProjects(prev => prev.filter(p => p.id !== projectId));
+            setTasks(prev => prev.map(t => t.projectId === projectId ? { ...t, projectId: undefined } : t));
+            if(view === 'project-detail' && selectedItemId === projectId) {
+                handleSetView('projects');
+            }
+        } catch (error) {
+            console.error("Error deleting project:", error);
+        }
+    };
+
+    const requestDeleteProject = (projectId: string, projectTitle: string) => {
+        setPendingAction({
+            title: 'מחיקת פרויקט',
+            message: `האם אתה בטוח שברצונך למחוק את הפרויקט "${projectTitle}"? פעולה זו תסיר את שיוך הפרויקט מכל המשימות הקשורות.`,
+            onConfirm: () => handleDeleteProject(projectId),
+        });
+    };
+
+    const handleSaveIdea = async (ideaToSave: Omit<Idea, 'id'>) => {
         if (!user) return;
         setIsIdeaModalOpen(false);
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id, ...ideaData } = ideaToSave;
-            const docRef = await addDoc(collection(db, `users/${user.uid}/ideas`), ideaData);
-            setIdeas(prev => [...prev, { ...ideaData, id: docRef.id } as Idea]);
+            const docRef = await addDoc(collection(db, `users/${user.uid}/ideas`), ideaToSave);
+            setIdeas(prev => [...prev, { ...ideaToSave, id: docRef.id } as Idea]);
         } catch (error) {
             console.error("Error saving idea:", error);
         }
     };
     
-    const handleSaveCustomer = async (customerToSave: Customer) => {
+    const handleSaveCustomer = async (customerToSave: Omit<Customer, 'id'> & { id?: string }) => {
         if (!user) return;
         setIsCustomerModalOpen(false);
+        setEditingCustomer(null);
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { id, ...customerData } = customerToSave;
-            const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerData);
-            setCustomers(prev => [...prev, { ...customerData, id: docRef.id } as Customer]);
+            if (id) { // Update
+                const customerDocRef = doc(db, `users/${user.uid}/customers`, id);
+                await updateDoc(customerDocRef, customerData);
+                setCustomers(prev => prev.map(c => c.id === id ? { ...customerData, id } as Customer : c));
+            } else { // Create
+                const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerData);
+                setCustomers(prev => [...prev, { ...customerData, id: docRef.id } as Customer]);
+            }
         } catch (error) {
             console.error("Error saving customer:", error);
         }
+    };
+
+    const handleDeleteCustomer = async (customerId: string) => {
+        if (!user) return;
+        try {
+            const batch = writeBatch(db);
+            
+            const customerDocRef = doc(db, `users/${user.uid}/customers`, customerId);
+            batch.delete(customerDocRef);
+
+            tasks.filter(t => t.customerId === customerId).forEach(task => {
+                const taskDocRef = doc(db, `users/${user.uid}/tasks`, task.id);
+                batch.update(taskDocRef, { customerId: undefined });
+            });
+
+            projects.filter(p => p.customerIds?.includes(customerId)).forEach(project => {
+                const projectDocRef = doc(db, `users/${user.uid}/projects`, project.id);
+                const newCustomerIds = project.customerIds?.filter(id => id !== customerId);
+                batch.update(projectDocRef, { customerIds: newCustomerIds });
+            });
+            
+            await batch.commit();
+
+            setCustomers(prev => prev.filter(c => c.id !== customerId));
+            setTasks(prev => prev.map(t => t.customerId === customerId ? { ...t, customerId: undefined } : t));
+            setProjects(prev => prev.map(p => {
+                if (p.customerIds?.includes(customerId)) {
+                    return { ...p, customerIds: p.customerIds.filter(id => id !== customerId) };
+                }
+                return p;
+            }));
+
+            if(view === 'customer-detail' && selectedItemId === customerId) {
+                handleSetView('customers');
+            }
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+        }
+    };
+
+    const requestDeleteCustomer = (customerId: string, customerName: string) => {
+        setPendingAction({
+            title: 'מחיקת לקוח',
+            message: `האם אתה בטוח שברצונך למחוק את הלקוח "${customerName}"? פעולה זו תסיר את שיוך הלקוח מכל המשימות והפרויקטים הקשורים.`,
+            onConfirm: () => handleDeleteCustomer(customerId),
+        });
     };
 
     const handleConvertIdeaToProject = async (idea: Idea) => {
@@ -237,21 +348,16 @@ const App: React.FC = () => {
             description: idea.description,
             ideaId: idea.id,
         };
-
         try {
             const batch = writeBatch(db);
-            
             const projectDocRef = doc(collection(db, `users/${user.uid}/projects`));
             batch.set(projectDocRef, newProjectData);
-
             const ideaDocRef = doc(db, `users/${user.uid}/ideas`, idea.id);
             batch.delete(ideaDocRef);
-
             await batch.commit();
 
             setProjects(prev => [...prev, { ...newProjectData, id: projectDocRef.id } as Project]);
             setIdeas(prev => prev.filter(i => i.id !== idea.id));
-            
             handleSetView('projects');
         } catch(error) {
             console.error("Error converting idea to project:", error);
@@ -261,36 +367,30 @@ const App: React.FC = () => {
     const renderView = () => {
         switch (view) {
             case 'dashboard':
-                return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
+                return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
             case 'tasks':
-                return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus} />;
+                return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} />;
             case 'projects':
-                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} />;
+                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} />;
             case 'customers':
-                return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} />;
+                return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} />;
             case 'ideas':
                 return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} />;
             case 'project-detail':
                 const project = projects.find(p => p.id === selectedItemId);
                 if (!project) return <div>Project not found</div>;
-                const projectTasks = tasks.filter(t => t.projectId === selectedItemId);
-                return <ProjectDetailView project={project} tasks={projectTasks} customers={customers} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus} />;
+                return <ProjectDetailView project={project} tasks={tasks.filter(t => t.projectId === selectedItemId)} customers={customers} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} />;
             case 'customer-detail':
                  const customer = customers.find(c => c.id === selectedItemId);
                  if (!customer) return <div>Customer not found</div>
-                 const customerTasks = tasks.filter(t => t.customerId === selectedItemId);
-                 return <CustomerDetailView customer={customer} tasks={customerTasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus}/>;
+                 return <CustomerDetailView customer={customer} tasks={tasks.filter(t => t.customerId === selectedItemId)} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} />;
             default:
-                return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
+                return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
         }
     };
 
     if (authLoading) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-800" dir="rtl">
-                <div className="text-xl font-semibold text-gray-700 dark:text-gray-200">טוען...</div>
-            </div>
-        );
+        return <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-800" dir="rtl"><div className="text-xl font-semibold text-gray-700 dark:text-gray-200">טוען...</div></div>;
     }
     
     if (!user) {
@@ -298,55 +398,20 @@ const App: React.FC = () => {
     }
 
     if (loading) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-800" dir="rtl">
-                <div className="text-xl font-semibold text-gray-700 dark:text-gray-200">טוען נתונים...</div>
-            </div>
-        );
+        return <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-800" dir="rtl"><div className="text-xl font-semibold text-gray-700 dark:text-gray-200">טוען נתונים...</div></div>;
     }
     
     const speedDialActions: SpeedDialAction[] = [
-        {
-          icon: <LightBulbIcon />,
-          onClick: () => setIsIdeaModalOpen(true),
-          bgColor: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400',
-          ariaLabel: "הוסף רעיון חדש"
-        },
-        {
-          icon: <UserGroupIcon />,
-          onClick: () => setIsCustomerModalOpen(true),
-          bgColor: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
-          ariaLabel: "הוסף לקוח חדש"
-        },
-        {
-          icon: <ProjectFolderIcon />,
-          onClick: handleOpenNewProjectModal,
-          bgColor: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
-          ariaLabel: "הוסף פרויקט חדש"
-        },
-        {
-          icon: <PlusIcon />,
-          onClick: handleOpenNewTaskModal,
-          bgColor: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500',
-          ariaLabel: "הוסף משימה חדשה"
-        }
+        { icon: <LightBulbIcon />, onClick: () => setIsIdeaModalOpen(true), bgColor: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400', ariaLabel: "הוסף רעיון חדש", label: "רעיון" },
+        { icon: <UserGroupIcon />, onClick: handleOpenNewCustomerModal, bgColor: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500', ariaLabel: "הוסף לקוח חדש", label: "לקוח" },
+        { icon: <ProjectFolderIcon />, onClick: handleOpenNewProjectModal, bgColor: 'bg-green-600 hover:bg-green-700 focus:ring-green-500', ariaLabel: "הוסף פרויקט חדש", label: "פרויקט" },
+        { icon: <PlusIcon />, onClick: handleOpenNewTaskModal, bgColor: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500', ariaLabel: "הוסף משימה חדשה", label: "משימה" }
     ].reverse();
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100" dir="rtl">
-            {isSidebarOpen && window.innerWidth <= 1024 && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
-                    aria-hidden="true"
-                ></div>
-            )}
-            <Sidebar 
-                currentView={view} 
-                setView={handleSetView} 
-                isOpen={isSidebarOpen}
-                setIsOpen={setIsSidebarOpen}
-            />
+            {isSidebarOpen && window.innerWidth <= 1024 && ( <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} aria-hidden="true"></div> )}
+            <Sidebar currentView={view} setView={handleSetView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header onLogout={handleLogout} userEmail={user.email} onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-6">
@@ -356,34 +421,11 @@ const App: React.FC = () => {
             
             <SpeedDial actions={speedDialActions} />
             
-            <TaskForm
-                isOpen={isTaskModalOpen}
-                onClose={() => setIsTaskModalOpen(false)}
-                onSave={handleSaveTask}
-                task={editingTask}
-                projects={projects}
-                customers={customers}
-            />
-
-            <ProjectForm 
-                isOpen={isProjectModalOpen}
-                onClose={() => { setIsProjectModalOpen(false); setEditingProject(null); }}
-                onSave={handleSaveProject}
-                project={editingProject}
-                customers={customers}
-            />
-
-            <IdeaForm
-                isOpen={isIdeaModalOpen}
-                onClose={() => setIsIdeaModalOpen(false)}
-                onSave={handleSaveIdea}
-            />
-            
-            <CustomerForm
-                isOpen={isCustomerModalOpen}
-                onClose={() => setIsCustomerModalOpen(false)}
-                onSave={handleSaveCustomer}
-            />
+            <TaskForm isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} onSave={handleSaveTask} task={editingTask} projects={projects} customers={customers} />
+            <ProjectForm isOpen={isProjectModalOpen} onClose={() => { setIsProjectModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} project={editingProject} customers={customers} />
+            <IdeaForm isOpen={isIdeaModalOpen} onClose={() => setIsIdeaModalOpen(false)} onSave={handleSaveIdea} />
+            <CustomerForm isOpen={isCustomerModalOpen} onClose={() => { setIsCustomerModalOpen(false); setEditingCustomer(null); }} onSave={handleSaveCustomer} customer={editingCustomer} />
+            <ConfirmationModal isOpen={!!pendingAction} onClose={handleCancelAction} onConfirm={handleConfirmAction} title={pendingAction?.title || ''} message={pendingAction?.message || ''} />
         </div>
     );
 };

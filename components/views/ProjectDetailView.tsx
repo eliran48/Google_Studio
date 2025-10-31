@@ -2,6 +2,7 @@ import React from 'react';
 import { Project, Task, Customer } from '../../types';
 import TaskList from '../tasks/TaskList';
 import Card from '../ui/Card';
+import { EditIcon, TrashIcon } from '../ui/Icons';
 
 interface ProjectDetailViewProps {
   project: Project;
@@ -9,16 +10,30 @@ interface ProjectDetailViewProps {
   customers: Customer[];
   onEditTask: (task: Task) => void;
   onToggleStatus: (taskId: string) => void;
+  onEditProject: (project: Project) => void;
+  onDeleteProject: (projectId: string, projectTitle: string) => void;
 }
 
-const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ project, tasks, customers, onEditTask, onToggleStatus }) => {
+const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ project, tasks, customers, onEditTask, onToggleStatus, onEditProject, onDeleteProject }) => {
   const projectCustomers = customers.filter(c => project.customerIds?.includes(c.id));
 
   return (
     <div className="space-y-6">
       <Card>
-        <h2 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">{project.title}</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-300">{project.description}</p>
+        <div className="flex justify-between items-start">
+            <div>
+                <h2 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">{project.title}</h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-300">{project.description}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => onEditProject(project)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                    <EditIcon className="w-5 h-5" />
+                </button>
+                <button onClick={() => onDeleteProject(project.id, project.title)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-900 text-gray-600 dark:text-gray-300 hover:text-red-600">
+                    <TrashIcon className="w-5 h-5" />
+                </button>
+            </div>
+        </div>
       </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

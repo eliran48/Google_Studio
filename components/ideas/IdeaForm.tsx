@@ -5,7 +5,7 @@ import Modal from '../ui/Modal';
 interface IdeaFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (idea: Idea) => void;
+  onSave: (idea: Omit<Idea, 'id'>) => void;
 }
 
 const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave }) => {
@@ -16,12 +16,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave }) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
     
-    const newIdea: Idea = {
-      id: `idea-${Date.now()}`,
-      title,
-      description,
-    };
-    onSave(newIdea);
+    onSave({ title, description });
     setTitle('');
     setDescription('');
   };

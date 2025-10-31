@@ -5,36 +5,42 @@ import Modal from '../ui/Modal';
 interface CustomerFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (customer: Customer) => void;
+  onSave: (customer: Omit<Customer, 'id'> & { id?: string }) => void;
+  customer: Customer | null;
 }
 
-const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave }) => {
+const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, customer }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
   useEffect(() => {
-    if (!isOpen) {
-      setName('');
-      setEmail('');
+    if (isOpen) {
+        if (customer) {
+            setName(customer.name);
+            setEmail(customer.email || '');
+        } else {
+            setName('');
+            setEmail('');
+        }
     }
-  }, [isOpen]);
+  }, [customer, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     
-    const newCustomer: Customer = {
-      id: `cust-${Date.now()}`, // Temporary ID
+    const customerData = {
+      id: customer ? customer.id : undefined,
       name,
       email: email.trim() ? email.trim() : undefined,
     };
-    onSave(newCustomer);
+    onSave(customerData);
   };
   
   const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500";
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="לקוח חדש">
+    <Modal isOpen={isOpen} onClose={onClose} title={customer ? "עריכת לקוח" : "לקוח חדש"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block mb-1 font-medium">שם הלקוח</label>

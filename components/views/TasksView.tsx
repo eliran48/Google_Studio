@@ -33,7 +33,10 @@ const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; o
                 <input
                   type="checkbox"
                   checked={task.status === TaskStatus.DONE}
-                  onChange={() => onToggleStatus(task.id)}
+                  onChange={(e) => {
+                    e.preventDefault();
+                    onToggleStatus(task.id);
+                  }}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                   id={`kanban-check-${task.id}`}
                 />
@@ -49,7 +52,7 @@ const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; o
 const TaskColumn: React.FC<{ title: string; tasks: Task[]; onEditTask: (task: Task) => void; onToggleStatus: (taskId: string) => void; className: string; }> = ({ title, tasks, onEditTask, onToggleStatus, className }) => (
     <div className="bg-gray-100 dark:bg-gray-900/50 rounded-xl p-4">
         <h3 className={`text-lg font-bold mb-4 px-2 ${className}`}>{title} ({tasks.length})</h3>
-        <div className="space-y-4 h-[calc(100vh-250px)] overflow-y-auto pr-2">
+        <div className="space-y-4 overflow-y-auto pr-2">
             {tasks.length > 0 ? (
                 tasks.map(task => (
                     <TaskKanbanCard key={task.id} task={task} onEditTask={onEditTask} onToggleStatus={onToggleStatus} />

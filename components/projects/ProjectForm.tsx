@@ -6,7 +6,7 @@ import { ChevronDownIcon } from '../ui/Icons';
 interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (project: Project) => void;
+  onSave: (project: Omit<Project, 'id'> & { id?: string }) => void;
   project: Project | null;
   customers: Customer[];
 }
@@ -52,8 +52,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const projectData: Project = {
-      id: project ? project.id : '',
+    const projectData = {
+      id: project ? project.id : undefined,
       title,
       description,
       customerIds: selectedCustomerIds,
