@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewType } from '../../types';
-import { DashboardIcon, ProjectIcon, CustomerIcon, IdeaIcon } from '../ui/Icons';
+import { DashboardIcon, ProjectIcon, CustomerIcon, IdeaIcon, ChecklistIcon } from '../ui/Icons';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -10,6 +10,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
   const navItems = [
     { view: 'dashboard', label: 'דאשבורד', icon: DashboardIcon },
+    { view: 'tasks', label: 'משימות', icon: ChecklistIcon },
     { view: 'projects', label: 'פרויקטים', icon: ProjectIcon },
     { view: 'customers', label: 'לקוחות', icon: CustomerIcon },
     { view: 'ideas', label: 'רעיונות', icon: IdeaIcon },

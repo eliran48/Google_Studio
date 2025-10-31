@@ -12,11 +12,13 @@ import CustomersView from './components/views/CustomersView';
 import IdeasView from './components/views/IdeasView';
 import ProjectDetailView from './components/views/ProjectDetailView';
 import CustomerDetailView from './components/views/CustomerDetailView';
+import TasksView from './components/views/TasksView';
 import TaskForm from './components/tasks/TaskForm';
-import { PlusIcon, ProjectFolderIcon, LightBulbIcon } from './components/ui/Icons';
+import { PlusIcon, ProjectFolderIcon, LightBulbIcon, UserGroupIcon } from './components/ui/Icons';
 import ProjectForm from './components/projects/ProjectForm';
 import IdeaForm from './components/ideas/IdeaForm';
 import LoginView from './components/views/LoginView';
+import CustomerForm from './components/customers/CustomerForm';
 
 const App: React.FC = () => {
     const [view, setView] = useState<ViewType>('dashboard');
@@ -34,7 +36,9 @@ const App: React.FC = () => {
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
+    const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -113,24 +117,41 @@ const App: React.FC = () => {
         setEditingTask(task);
         setIsTaskModalOpen(true);
     };
+    
+    const handleOpenNewProjectModal = () => {
+        setEditingProject(null);
+        setIsProjectModalOpen(true);
+    };
+
+    const handleEditProject = (project: Project) => {
+        setEditingProject(project);
+        setIsProjectModalOpen(true);
+    };
 
     const handleSaveTask = async (taskToSave: Task) => {
         if (!user) return;
         setIsTaskModalOpen(false);
         setEditingTask(null);
         try {
-            const existingTask = tasks.find(t => t.id === taskToSave.id);
-            if (existingTask) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id, ...taskData } = taskToSave;
+            
+            // Create a clean object for Firestore by removing undefined keys
+            const firestoreData: { [key: string]: any } = {};
+            for (const key in taskData) {
+                if (taskData[key as keyof typeof taskData] !== undefined) {
+                    firestoreData[key] = taskData[key as keyof typeof taskData];
+                }
+            }
+    
+            if (taskToSave.id) { // Existing task
                 const taskDocRef = doc(db, `users/${user.uid}/tasks`, taskToSave.id);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { id, ...taskData } = taskToSave;
-                await updateDoc(taskDocRef, taskData);
+                await updateDoc(taskDocRef, firestoreData);
                 setTasks(prevTasks => prevTasks.map(t => t.id === taskToSave.id ? taskToSave : t));
-            } else {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { id, ...taskData } = taskToSave;
-                const docRef = await addDoc(collection(db, `users/${user.uid}/tasks`), taskData);
-                setTasks(prevTasks => [...prevTasks, { ...taskData, id: docRef.id } as Task]);
+            } else { // New task
+                const docRef = await addDoc(collection(db, `users/${user.uid}/tasks`), firestoreData);
+                const newTask = { ...taskToSave, id: docRef.id };
+                setTasks(prevTasks => [...prevTasks, newTask]);
             }
         } catch (error) {
             console.error("Error saving task:", error);
@@ -155,11 +176,27 @@ const App: React.FC = () => {
     const handleSaveProject = async (projectToSave: Project) => {
         if (!user) return;
         setIsProjectModalOpen(false);
+        setEditingProject(null);
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { id, ...projectData } = projectToSave;
-            const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), projectData);
-            setProjects(prev => [...prev, { ...projectData, id: docRef.id } as Project]);
+
+            const firestoreData: { [key: string]: any } = {};
+            for (const key in projectData) {
+                if (projectData[key as keyof typeof projectData] !== undefined) {
+                    firestoreData[key] = projectData[key as keyof typeof projectData];
+                }
+            }
+
+            if (projectToSave.id && projects.some(p => p.id === projectToSave.id)) { // Existing project
+                const projectDocRef = doc(db, `users/${user.uid}/projects`, projectToSave.id);
+                await updateDoc(projectDocRef, firestoreData);
+                setProjects(prev => prev.map(p => p.id === projectToSave.id ? projectToSave : p));
+            } else { // New project
+                const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), firestoreData);
+                const newProject = { ...projectToSave, id: docRef.id };
+                setProjects(prev => [...prev, newProject]);
+            }
         } catch (error) {
             console.error("Error saving project:", error);
         }
@@ -175,6 +212,19 @@ const App: React.FC = () => {
             setIdeas(prev => [...prev, { ...ideaData, id: docRef.id } as Idea]);
         } catch (error) {
             console.error("Error saving idea:", error);
+        }
+    };
+    
+    const handleSaveCustomer = async (customerToSave: Customer) => {
+        if (!user) return;
+        setIsCustomerModalOpen(false);
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id, ...customerData } = customerToSave;
+            const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerData);
+            setCustomers(prev => [...prev, { ...customerData, id: docRef.id } as Customer]);
+        } catch (error) {
+            console.error("Error saving customer:", error);
         }
     };
 
@@ -210,8 +260,10 @@ const App: React.FC = () => {
         switch (view) {
             case 'dashboard':
                 return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
+            case 'tasks':
+                return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={handleToggleTaskStatus} />;
             case 'projects':
-                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} />;
+                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} />;
             case 'customers':
                 return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} />;
             case 'ideas':
@@ -270,8 +322,16 @@ const App: React.FC = () => {
                 >
                     <LightBulbIcon className="w-6 h-6" />
                 </button>
+                 <button 
+                  onClick={() => setIsCustomerModalOpen(true)}
+                  className="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform hover:scale-110"
+                  aria-label="הוסף לקוח חדש"
+                  title="הוסף לקוח חדש"
+                >
+                    <UserGroupIcon className="w-6 h-6" />
+                </button>
                 <button 
-                  onClick={() => setIsProjectModalOpen(true)}
+                  onClick={handleOpenNewProjectModal}
                   className="bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform hover:scale-110"
                   aria-label="הוסף פרויקט חדש"
                   title="הוסף פרויקט חדש"
@@ -299,14 +359,22 @@ const App: React.FC = () => {
 
             <ProjectForm 
                 isOpen={isProjectModalOpen}
-                onClose={() => setIsProjectModalOpen(false)}
+                onClose={() => { setIsProjectModalOpen(false); setEditingProject(null); }}
                 onSave={handleSaveProject}
+                project={editingProject}
+                customers={customers}
             />
 
             <IdeaForm
                 isOpen={isIdeaModalOpen}
                 onClose={() => setIsIdeaModalOpen(false)}
                 onSave={handleSaveIdea}
+            />
+            
+            <CustomerForm
+                isOpen={isCustomerModalOpen}
+                onClose={() => setIsCustomerModalOpen(false)}
+                onSave={handleSaveCustomer}
             />
         </div>
     );

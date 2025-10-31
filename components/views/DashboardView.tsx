@@ -27,9 +27,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
     
     const incompleteTasks = tasks.filter(t => t.status !== TaskStatus.DONE);
     
-    const overdue = incompleteTasks.filter(t => new Date(t.dueDate) < startOfToday);
+    const overdue = incompleteTasks.filter(t => t.dueDate && new Date(t.dueDate) < startOfToday);
     
     const upcoming = incompleteTasks.filter(t => {
+      if (!t.dueDate) return false;
       const dueDate = new Date(t.dueDate);
       const sevenDaysFromNow = new Date(startOfToday);
       sevenDaysFromNow.setDate(startOfToday.getDate() + 7);

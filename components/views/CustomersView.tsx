@@ -25,7 +25,11 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCusto
                     <UserGroupIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400"/>
                 </div>
                 <h3 className="text-lg font-bold">{customer.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{customer.email}</p>
+                {customer.email ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{customer.email}</p>
+                ) : (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 italic">אין אימייל</p>
+                )}
                 <p className="mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{getCustomerTaskCount(customer.id)} משימות פעילות</p>
             </div>
           </Card>

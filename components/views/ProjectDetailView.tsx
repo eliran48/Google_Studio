@@ -12,7 +12,7 @@ interface ProjectDetailViewProps {
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ project, tasks, customers, onEditTask, onToggleStatus }) => {
-  const projectCustomers = customers.filter(c => tasks.some(t => t.customerId === c.id));
+  const projectCustomers = customers.filter(c => project.customerIds?.includes(c.id));
 
   return (
     <div className="space-y-6">
@@ -27,7 +27,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ project, tasks, c
         </div>
         <div>
             <Card>
-                <h3 className="text-xl font-bold mb-4">לקוחות מעורבים</h3>
+                <h3 className="text-xl font-bold mb-4">לקוחות משויכים</h3>
                 {projectCustomers.length > 0 ? (
                     <ul className="space-y-2">
                         {projectCustomers.map(customer => (
@@ -35,7 +35,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ project, tasks, c
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-gray-500 dark:text-gray-400">אין לקוחות המשויכים לפרויקט זה.</p>
+                    <p className="text-gray-500 dark:text-gray-400">אין לקוחות המשויכים ישירות לפרויקט זה.</p>
                 )}
             </Card>
         </div>

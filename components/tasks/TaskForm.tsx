@@ -27,7 +27,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
       setType(task.type);
       setCustomerId(task.customerId);
       setProjectId(task.projectId);
-      setDueDate(task.dueDate.split('T')[0]); // Format for date input
+      setDueDate(task.dueDate ? task.dueDate.split('T')[0] : ''); // Safely format for date input
       setPriority(task.priority);
     } else {
       // Reset form for new task
@@ -44,13 +44,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const taskData: Task = {
-      id: task ? task.id : `task-${Date.now()}`,
+      id: task ? task.id : '',
       title,
       description,
       type,
       customerId,
       projectId,
-      dueDate: new Date(dueDate).toISOString(),
+      dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
       priority,
       status: task ? task.status : TaskStatus.TODO,
       createdAt: task ? task.createdAt : new Date().toISOString(),
@@ -89,14 +89,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block mb-1 font-medium">לקוח</label>
-              <select value={customerId || ''} onChange={e => setCustomerId(e.target.value)} className={commonInputClasses}>
+              <select value={customerId || ''} onChange={e => setCustomerId(e.target.value || undefined)} className={commonInputClasses}>
                 <option value="">בחר לקוח</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block mb-1 font-medium">פרויקט</label>
-              <select value={projectId || ''} onChange={e => setProjectId(e.target.value)} className={commonInputClasses}>
+              <select value={projectId || ''} onChange={e => setProjectId(e.target.value || undefined)} className={commonInputClasses}>
                 <option value="">בחר פרויקט</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
@@ -105,7 +105,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
         )}
         <div>
             <label className="block mb-1 font-medium">תאריך יעד</label>
-            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} required />
+            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} />
         </div>
         <div className="flex justify-end gap-3 pt-4">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">ביטול</button>

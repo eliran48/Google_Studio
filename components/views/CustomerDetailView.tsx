@@ -17,7 +17,11 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
     <div className="space-y-6">
       <Card>
         <h2 className="text-3xl font-bold text-teal-700 dark:text-teal-400">{customer.name}</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-300">{customer.email}</p>
+        {customer.email ? (
+            <p className="mt-2 text-gray-600 dark:text-gray-300">{customer.email}</p>
+        ) : (
+             <p className="mt-2 text-gray-500 dark:text-gray-400 italic">אין אימייל</p>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

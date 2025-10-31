@@ -1,4 +1,3 @@
-
 export enum TaskType {
   PERSONAL = 'אישי',
   BUSINESS = 'עסקי',
@@ -24,7 +23,7 @@ export interface Task {
   type: TaskType;
   customerId?: string; 
   projectId?: string; 
-  dueDate: string; 
+  dueDate?: string; 
   priority: TaskPriority;
   status: TaskStatus;
   createdAt: string;
@@ -33,7 +32,7 @@ export interface Task {
 export interface Customer {
   id: string;
   name: string;
-  email: string;
+  email?: string;
 }
 
 export interface Project {
@@ -41,6 +40,7 @@ export interface Project {
   title: string;
   description?: string;
   ideaId?: string;
+  customerIds?: string[];
 }
 
 export interface Idea {
@@ -49,4 +49,4 @@ export interface Idea {
   description: string;
 }
 
-export type ViewType = 'dashboard' | 'projects' | 'customers' | 'ideas' | 'project-detail' | 'customer-detail';
+export type ViewType = 'dashboard' | 'projects' | 'customers' | 'ideas' | 'project-detail' | 'customer-detail' | 'tasks';

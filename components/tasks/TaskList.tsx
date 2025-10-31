@@ -13,7 +13,7 @@ interface TaskListProps {
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleStatus }) => {
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
     if (!dateString) return 'אין תאריך יעד';
     try {
         const date = new Date(dateString);
@@ -34,16 +34,22 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
       ) : (
         <div className="space-y-4">
           {tasks.map(task => (
-            <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-shadow hover:shadow-md">
+            <div 
+              key={task.id} 
+              onClick={() => onEditTask(task)}
+              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-shadow hover:shadow-md cursor-pointer"
+            >
               <div className="flex items-start gap-4 flex-1 min-w-0">
-                <input
-                  type="checkbox"
-                  checked={task.status === TaskStatus.DONE}
-                  onChange={() => onToggleStatus(task.id)}
-                  className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer mt-1 flex-shrink-0"
-                  aria-labelledby={`task-title-${task.id}`}
-                />
-                <div onClick={() => onEditTask(task)} className="flex-1 cursor-pointer min-w-0">
+                <div onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={task.status === TaskStatus.DONE}
+                    onChange={() => onToggleStatus(task.id)}
+                    className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer mt-1 flex-shrink-0"
+                    aria-labelledby={`task-title-${task.id}`}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
                   <p id={`task-title-${task.id}`} className={`font-medium truncate ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
                     {task.title}
                   </p>
@@ -59,7 +65,13 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
               </div>
               <div className="flex items-center gap-4 pl-2">
                   <Badge priority={task.priority} />
-                  <button onClick={() => onEditTask(task)} className="text-gray-400 hover:text-indigo-600" aria-label={`ערוך משימה ${task.title}`}>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditTask(task);
+                    }} 
+                    className="text-gray-400 hover:text-indigo-600" aria-label={`ערוך משימה ${task.title}`}
+                  >
                       <EditIcon className="w-5 h-5" />
                   </button>
               </div>
