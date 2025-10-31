@@ -1,72 +1,93 @@
-import React, { useState, useMemo } from 'react';
-import { Task, Project, Customer, TaskStatus, TaskPriority } from '../../types';
+
+import React from 'react';
+import { Task, TaskStatus, Project } from '../../types';
 import TaskList from '../tasks/TaskList';
 import Card from '../ui/Card';
+import { ProjectFolderIcon } from '../ui/Icons';
 
 interface DashboardViewProps {
   tasks: Task[];
   projects: Project[];
-  customers: Customer[];
   onEditTask: (task: Task) => void;
+  onToggleStatus: (taskId: string) => void;
+  onProjectSelect: (projectId: string) => void;
 }
 
-type FilterType = 'active' | 'completed' | 'urgent';
-
-const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, customers, onEditTask }) => {
-    const [filter, setFilter] = useState<FilterType>('active');
-
-    const filteredTasks = useMemo(() => {
-        switch (filter) {
-            case 'completed':
-                return tasks.filter(t => t.status === TaskStatus.DONE);
-            case 'urgent':
-                return tasks.filter(t => t.priority === TaskPriority.URGENT && t.status !== TaskStatus.DONE);
-            case 'active':
-            default:
-                return tasks.filter(t => t.status !== TaskStatus.DONE);
-        }
-    }, [tasks, filter]);
-
-    const activeTasksCount = useMemo(() => tasks.filter(t => t.status !== TaskStatus.DONE).length, [tasks]);
-    const overdueTasksCount = useMemo(() => tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.DONE).length, [tasks]);
-
-
-  const getFilterButtonClass = (buttonFilter: FilterType) => {
-    return `px-4 py-2 rounded-md text-sm font-medium transition ${
-      filter === buttonFilter 
-        ? 'bg-indigo-600 text-white' 
-        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-    }`;
-  }
+const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTask, onToggleStatus, onProjectSelect }) => {
+  const now = new Date();
   
+  const incompleteTasks = tasks.filter(t => t.status !== TaskStatus.DONE);
+
+  const overdueTasks = incompleteTasks.filter(t => new Date(t.dueDate) < now);
+  const upcomingTasks = incompleteTasks.filter(t => {
+    const dueDate = new Date(t.dueDate);
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(now.getDate() + 7);
+    return dueDate >= now && dueDate <= sevenDaysFromNow;
+  });
+
+  const stats = {
+      total: tasks.length,
+      completed: tasks.filter(t => t.status === TaskStatus.DONE).length,
+      inProgress: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
+      todo: tasks.filter(t => t.status === TaskStatus.TODO).length,
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-            <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">משימות פעילות</h3>
-            <p className="text-4xl font-bold mt-2">{activeTasksCount}</p>
-        </Card>
-        <Card>
-            <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">פרויקטים</h3>
-            <p className="text-4xl font-bold mt-2">{projects.length}</p>
-        </Card>
-        <Card>
-            <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">משימות דחופות באיחור</h3>
-            <p className={`text-4xl font-bold mt-2 ${overdueTasksCount > 0 ? 'text-red-500' : ''}`}>{overdueTasksCount}</p>
-        </Card>
-      </div>
-
-      <div>
-        <div className="mb-4 bg-gray-200 dark:bg-gray-900 p-1 rounded-lg flex items-center justify-start max-w-min">
-            <button onClick={() => setFilter('active')} className={getFilterButtonClass('active')}>פעילות</button>
-            <button onClick={() => setFilter('urgent')} className={getFilterButtonClass('urgent')}>דחופות</button>
-            <button onClick={() => setFilter('completed')} className={getFilterButtonClass('completed')}>הושלמו</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="סה״כ משימות" value={stats.total} />
+            <StatCard title="לביצוע" value={stats.todo} />
+            <StatCard title="בתהליך" value={stats.inProgress} />
+            <StatCard title="הושלמו" value={stats.completed} />
         </div>
 
-        <TaskList tasks={filteredTasks} onEditTask={onEditTask} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+            <div className="space-y-6">
+                <TaskList
+                tasks={overdueTasks}
+                title="משימות באיחור"
+                onEditTask={onEditTask}
+                onToggleStatus={onToggleStatus}
+                />
+                <TaskList
+                tasks={upcomingTasks}
+                title="משימות לשבוע הקרוב"
+                onEditTask={onEditTask}
+                onToggleStatus={onToggleStatus}
+                />
+            </div>
+        </div>
+        <div>
+            <Card>
+                <h3 className="text-xl font-bold mb-4">פרויקטים פעילים</h3>
+                <div className="space-y-3">
+                    {projects.slice(0, 5).map(project => (
+                        <div key={project.id} onClick={() => onProjectSelect(project.id)} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                            <ProjectFolderIcon className="w-6 h-6 text-indigo-500" />
+                            <span className="font-medium">{project.title}</span>
+                        </div>
+                    ))}
+                    {projects.length === 0 && <p className="text-sm text-gray-500">אין פרויקטים להצגה.</p>}
+                </div>
+            </Card>
+        </div>
       </div>
     </div>
   );
 };
+
+interface StatCardProps {
+    title: string;
+    value: number | string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({title, value}) => (
+    <Card className="text-center">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        <p className="text-3xl font-bold mt-1">{value}</p>
+    </Card>
+);
 
 export default DashboardView;

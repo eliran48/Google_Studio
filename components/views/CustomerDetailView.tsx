@@ -8,9 +8,10 @@ interface CustomerDetailViewProps {
   tasks: Task[];
   projects: Project[];
   onEditTask: (task: Task) => void;
+  onToggleStatus: (taskId: string) => void;
 }
 
-const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks, projects, onEditTask }) => {
+const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks, projects, onEditTask, onToggleStatus }) => {
     const customerProjects = projects.filter(p => tasks.some(t => t.projectId === p.id));
   return (
     <div className="space-y-6">
@@ -21,7 +22,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-            <TaskList tasks={tasks} onEditTask={onEditTask} title={`משימות עבור ${customer.name}`} />
+            <TaskList tasks={tasks} onEditTask={onEditTask} title={`משימות עבור ${customer.name}`} onToggleStatus={onToggleStatus} />
         </div>
         <div>
             <Card>
