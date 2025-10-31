@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
+import { auth } from '../../services/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
-interface LoginViewProps {
-  onLogin: () => void;
-}
-
-const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
+const LoginView: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (isRegistering) {
-      // Registration logic
       if (password !== confirmPassword) {
         setError('הסיסמאות אינן תואמות.');
         return;
@@ -25,14 +22,22 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         setError('הסיסמה חייבת להכיל לפחות 6 תווים.');
         return;
       }
-      // Simulate successful registration and login
-      onLogin();
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } catch (err: any) {
+        if (err.code === 'auth/email-already-in-use') {
+          setError('כתובת האימייל כבר בשימוש.');
+        } else {
+          setError('אירעה שגיאה ברישום. נסה שוב.');
+        }
+        console.error("Registration error:", err);
+      }
     } else {
-      // Login logic
-      if (username === 'demo_user' && password === 'password') {
-        onLogin();
-      } else {
-        setError('שם המשתמש או הסיסמה שגויים.');
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err: any) {
+        setError('אימייל או סיסמה שגויים.');
+        console.error("Login error:", err);
       }
     }
   };
@@ -40,13 +45,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const toggleForm = () => {
     setIsRegistering(!isRegistering);
     setError('');
-    setUsername('');
+    setEmail('');
     setPassword('');
     setConfirmPassword('');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-center text-4xl font-extrabold text-gray-900 dark:text-white">
@@ -60,19 +65,19 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           {error && <p className="text-center text-sm text-red-500">{error}</p>}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="username" className="sr-only">
-                שם משתמש
+              <label htmlFor="email" className="sr-only">
+                כתובת אימייל
               </label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder={isRegistering ? "שם משתמש" : "שם משתמש (נסה: demo_user)"}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="כתובת אימייל"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
@@ -86,7 +91,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 autoComplete={isRegistering ? "new-password" : "current-password"}
                 required
                 className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 ${isRegistering ? '' : 'rounded-b-md'} focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder={isRegistering ? "סיסמה" : "סיסמה (נסה: password)"}
+                placeholder="סיסמה"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
