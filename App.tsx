@@ -5,7 +5,7 @@ import { collection, getDocs, doc, updateDoc, addDoc, writeBatch, deleteDoc } fr
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 import Sidebar from './components/layout/Sidebar';
-import Header from './components/layout/Header';
+import Header, { HeaderAction } from './components/layout/Header';
 import DashboardView from './components/views/DashboardView';
 import ProjectsView from './components/views/ProjectsView';
 import CustomersView from './components/views/CustomersView';
@@ -19,7 +19,6 @@ import ProjectForm from './components/projects/ProjectForm';
 import IdeaForm from './components/ideas/IdeaForm';
 import LoginView from './components/views/LoginView';
 import CustomerForm from './components/customers/CustomerForm';
-import SpeedDial, { SpeedDialAction } from './components/ui/SpeedDial';
 import ConfirmationModal from './components/ui/ConfirmationModal';
 
 const App: React.FC = () => {
@@ -401,25 +400,28 @@ const App: React.FC = () => {
         return <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-800" dir="rtl"><div className="text-xl font-semibold text-gray-700 dark:text-gray-200">טוען נתונים...</div></div>;
     }
     
-    const speedDialActions: SpeedDialAction[] = [
-        { icon: <LightBulbIcon />, onClick: () => setIsIdeaModalOpen(true), bgColor: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400', ariaLabel: "הוסף רעיון חדש", label: "רעיון" },
-        { icon: <UserGroupIcon />, onClick: handleOpenNewCustomerModal, bgColor: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500', ariaLabel: "הוסף לקוח חדש", label: "לקוח" },
-        { icon: <ProjectFolderIcon />, onClick: handleOpenNewProjectModal, bgColor: 'bg-green-600 hover:bg-green-700 focus:ring-green-500', ariaLabel: "הוסף פרויקט חדש", label: "פרויקט" },
-        { icon: <PlusIcon />, onClick: handleOpenNewTaskModal, bgColor: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500', ariaLabel: "הוסף משימה חדשה", label: "משימה" }
-    ].reverse();
+    const addActions: HeaderAction[] = [
+        { icon: <PlusIcon />, onClick: handleOpenNewTaskModal, label: "משימה" },
+        { icon: <ProjectFolderIcon />, onClick: handleOpenNewProjectModal, label: "פרויקט" },
+        { icon: <UserGroupIcon />, onClick: handleOpenNewCustomerModal, label: "לקוח" },
+        { icon: <LightBulbIcon />, onClick: () => setIsIdeaModalOpen(true), label: "רעיון" },
+    ];
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100" dir="rtl">
             {isSidebarOpen && window.innerWidth <= 1024 && ( <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} aria-hidden="true"></div> )}
             <Sidebar currentView={view} setView={handleSetView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header onLogout={handleLogout} userEmail={user.email} onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
+                <Header 
+                    onLogout={handleLogout} 
+                    userEmail={user.email} 
+                    onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+                    addActions={addActions}
+                />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-6">
                     {renderView()}
                 </main>
             </div>
-            
-            <SpeedDial actions={speedDialActions} />
             
             <TaskForm isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} onSave={handleSaveTask} task={editingTask} projects={projects} customers={customers} />
             <ProjectForm isOpen={isProjectModalOpen} onClose={() => { setIsProjectModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} project={editingProject} customers={customers} />
