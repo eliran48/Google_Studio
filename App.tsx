@@ -19,6 +19,7 @@ import ProjectForm from './components/projects/ProjectForm';
 import IdeaForm from './components/ideas/IdeaForm';
 import LoginView from './components/views/LoginView';
 import CustomerForm from './components/customers/CustomerForm';
+import SpeedDial, { SpeedDialAction } from './components/ui/SpeedDial';
 
 const App: React.FC = () => {
     const [view, setView] = useState<ViewType>('dashboard');
@@ -39,6 +40,7 @@ const App: React.FC = () => {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -302,51 +304,57 @@ const App: React.FC = () => {
             </div>
         );
     }
+    
+    const speedDialActions: SpeedDialAction[] = [
+        {
+          icon: <LightBulbIcon />,
+          onClick: () => setIsIdeaModalOpen(true),
+          bgColor: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400',
+          ariaLabel: "הוסף רעיון חדש"
+        },
+        {
+          icon: <UserGroupIcon />,
+          onClick: () => setIsCustomerModalOpen(true),
+          bgColor: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+          ariaLabel: "הוסף לקוח חדש"
+        },
+        {
+          icon: <ProjectFolderIcon />,
+          onClick: handleOpenNewProjectModal,
+          bgColor: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+          ariaLabel: "הוסף פרויקט חדש"
+        },
+        {
+          icon: <PlusIcon />,
+          onClick: handleOpenNewTaskModal,
+          bgColor: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500',
+          ariaLabel: "הוסף משימה חדשה"
+        }
+    ].reverse();
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100" dir="rtl">
-            <Sidebar currentView={view} setView={handleSetView} />
+            {isSidebarOpen && window.innerWidth <= 1024 && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                    aria-hidden="true"
+                ></div>
+            )}
+            <Sidebar 
+                currentView={view} 
+                setView={handleSetView} 
+                isOpen={isSidebarOpen}
+                setIsOpen={setIsSidebarOpen}
+            />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header onLogout={handleLogout} userEmail={user.email} />
+                <Header onLogout={handleLogout} userEmail={user.email} onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-6">
                     {renderView()}
                 </main>
             </div>
             
-            <div className="fixed bottom-8 right-8 z-40 flex flex-col items-center gap-4">
-                 <button 
-                  onClick={() => setIsIdeaModalOpen(true)}
-                  className="bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform hover:scale-110"
-                  aria-label="הוסף רעיון חדש"
-                  title="הוסף רעיון חדש"
-                >
-                    <LightBulbIcon className="w-6 h-6" />
-                </button>
-                 <button 
-                  onClick={() => setIsCustomerModalOpen(true)}
-                  className="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform hover:scale-110"
-                  aria-label="הוסף לקוח חדש"
-                  title="הוסף לקוח חדש"
-                >
-                    <UserGroupIcon className="w-6 h-6" />
-                </button>
-                <button 
-                  onClick={handleOpenNewProjectModal}
-                  className="bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform hover:scale-110"
-                  aria-label="הוסף פרויקט חדש"
-                  title="הוסף פרויקט חדש"
-                >
-                    <ProjectFolderIcon className="w-6 h-6" />
-                </button>
-                 <button 
-                  onClick={handleOpenNewTaskModal}
-                  className="bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform hover:scale-110"
-                  aria-label="הוסף משימה חדשה"
-                  title="הוסף משימה חדשה"
-                >
-                    <PlusIcon className="w-6 h-6" />
-                </button>
-            </div>
+            <SpeedDial actions={speedDialActions} />
             
             <TaskForm
                 isOpen={isTaskModalOpen}
