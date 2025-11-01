@@ -2,12 +2,14 @@
 import { Task, Project, Customer, Idea, TaskType, TaskPriority, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort } from '../types';
 
 export const initialCustomers: Customer[] = [
-  // FIX: Added missing 'classification' property to satisfy the Customer type.
-  { id: 'cust-1', name: 'ישראלה ישראלי', classification: 'פעיל', notes: 'לקוחה ותיקה, אוהבת יחס אישי.' },
-  // FIX: Added missing 'classification' property to satisfy the Customer type.
-  { id: 'cust-2', name: 'משה כהן', classification: 'ליד', notes: 'פוטנציאל גדול, צריך מעקב צמוד.' },
-  // FIX: Added missing 'classification' property to satisfy the Customer type.
-  { id: 'cust-3', name: 'חברת הייטק בע"מ', classification: 'VIP', notes: '' },
+  { id: 'cust-1', name: 'ישראלה ישראלי', classification: 'פעיל', generalNotes: 'לקוחה ותיקה, אוהבת יחס אישי.', updates: [
+      { date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), text: 'שוחחנו על הפרויקט החדש, נראה שיש התעניינות.' },
+      { date: new Date(new Date().setDate(new Date().getDate() - 10)).toISOString(), text: 'שלחה מייל עם שאלות על החשבונית האחרונה.' },
+  ] },
+  { id: 'cust-2', name: 'משה כהן', classification: 'ליד', generalNotes: 'פוטנציאל גדול, צריך מעקב צמוד.', updates: [] },
+  { id: 'cust-3', name: 'חברת הייטק בע"מ', classification: 'VIP', generalNotes: '', updates: [
+      { date: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString(), text: 'פגישת זום לגבי הרחבת השירותים.' },
+  ] },
 ];
 
 export const initialProjects: Project[] = [

@@ -42,6 +42,10 @@ export enum IdeaEffort {
   LOW = 'נמוך',
 }
 
+export interface Update {
+  date: string;
+  text: string;
+}
 
 export interface Task {
   id: string;
@@ -60,7 +64,8 @@ export interface Customer {
   id: string;
   name: string;
   classification?: string;
-  notes?: string;
+  generalNotes?: string;
+  updates?: Update[];
 }
 
 export interface Project {

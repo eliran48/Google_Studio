@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 // FIX: Imported the 'TaskPriority' type to resolve the 'Cannot find name' error.
-import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort, TaskType, TaskPriority } from './types';
+import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort, TaskType, TaskPriority, Update } from './types';
 import { db, auth } from './services/firebase';
 import { collection, getDocs, doc, updateDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -291,7 +291,7 @@ const App: React.FC = () => {
         }
     };
     
-    const handleSaveCustomer = async (customerToSave: Omit<Customer, 'id'> & { id?: string }): Promise<void> => {
+    const handleSaveCustomer = async (customerToSave: Omit<Customer, 'id' | 'updates'> & { id?: string }): Promise<void> => {
         if (!user) {
             throw new Error("User not authenticated");
         }
@@ -306,14 +306,43 @@ const App: React.FC = () => {
                 setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...customerData } : c));
             } else {
                 // Create
-                const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerData);
-                setCustomers(prev => [...prev, { ...customerData, id: docRef.id } as Customer]);
+                const customerWithDefaults = { ...customerData, updates: [] };
+                const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerWithDefaults);
+                setCustomers(prev => [...prev, { ...customerWithDefaults, id: docRef.id } as Customer]);
             }
         } catch (error) {
             console.error("Error saving customer:", error);
             throw error;
         }
     };
+
+    const handleSaveCustomerUpdate = async (customerId: string, updateText: string) => {
+        if (!user || !updateText.trim()) return;
+
+        const customer = customers.find(c => c.id === customerId);
+        if (!customer) return;
+
+        const newUpdate: Update = {
+            date: new Date().toISOString(),
+            text: updateText.trim(),
+        };
+
+        const updatedUpdates = [newUpdate, ...(customer.updates || [])];
+
+        try {
+            const customerDocRef = doc(db, `users/${user.uid}/customers`, customerId);
+            await updateDoc(customerDocRef, { updates: updatedUpdates });
+
+            setCustomers(prevCustomers =>
+                prevCustomers.map(c =>
+                    c.id === customerId ? { ...c, updates: updatedUpdates } : c
+                )
+            );
+        } catch (error) {
+            console.error("Error saving customer update:", error);
+        }
+    };
+
 
     const handleDeleteCustomer = async (customerId: string) => {
         if (!user) return;
@@ -422,7 +451,7 @@ const App: React.FC = () => {
             case 'customer-detail':
                  const customer = customers.find(c => c.id === selectedItemId);
                  if (!customer) return <div>Customer not found</div>
-                 return <CustomerDetailView customer={customer} tasks={tasks.filter(t => t.customerId === selectedItemId)} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} />;
+                 return <CustomerDetailView customer={customer} tasks={tasks.filter(t => t.customerId === selectedItemId)} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddTask={handleOpenNewTaskModal} onSaveUpdate={handleSaveCustomerUpdate} />;
             default:
                 return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
         }

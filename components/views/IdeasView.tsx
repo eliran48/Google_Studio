@@ -1,5 +1,5 @@
 import React from 'react';
-import { Idea, IdeaImpact, IdeaEffort } from '../../types';
+import { Idea, IdeaImpact, IdeaEffort, IdeaCategory } from '../../types';
 import Card from '../ui/Card';
 import { LightBulbIcon, PlusIcon, EditIcon, TrashIcon } from '../ui/Icons';
 
@@ -71,7 +71,7 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onConvertToProject, onAddI
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate pr-16">{idea.title}</h3>
-                      <p className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{idea.category}</p>
+                      <p className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{idea.category || IdeaCategory.PRODUCT}</p>
                     </div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 mt-3 line-clamp-3">{idea.description}</p>
@@ -79,8 +79,8 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onConvertToProject, onAddI
 
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
                   <div className="flex flex-wrap gap-2">
-                     <InfoBadge label="השפעה" value={idea.impact} type="impact" />
-                     <InfoBadge label="מאמץ" value={idea.effort} type="effort" />
+                     <InfoBadge label="השפעה" value={idea.impact || IdeaImpact.MEDIUM} type="impact" />
+                     <InfoBadge label="מאמץ" value={idea.effort || IdeaEffort.MEDIUM} type="effort" />
                   </div>
                   <button 
                     onClick={() => onConvertToProject(idea)}

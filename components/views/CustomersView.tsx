@@ -62,9 +62,9 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCusto
 
             {/* Body */}
             <div className="p-4 flex-grow">
-              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">סיכום / הערות</h4>
+              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">הערות כלליות</h4>
               <div className="text-sm text-gray-600 dark:text-gray-300 h-20 overflow-y-auto bg-gray-50 dark:bg-gray-800 p-2 rounded prose-sm">
-                <p className="whitespace-pre-wrap">{customer.notes || 'אין הערות.'}</p>
+                <p className="whitespace-pre-wrap">{customer.generalNotes || 'אין הערות.'}</p>
               </div>
               <p className="mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{getCustomerTaskCount(customer.id)} משימות פעילות</p>
             </div>

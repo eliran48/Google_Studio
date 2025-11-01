@@ -5,14 +5,14 @@ import Modal from '../ui/Modal';
 interface CustomerFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (customer: Omit<Customer, 'id'> & { id?: string }) => Promise<void>;
+  onSave: (customer: Omit<Customer, 'id' | 'updates'> & { id?: string }) => Promise<void>;
   customer: Customer | null;
 }
 
 const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, customer }) => {
   const [name, setName] = useState('');
   const [classification, setClassification] = useState('');
-  const [notes, setNotes] = useState('');
+  const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -21,11 +21,11 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, cu
         if (customer) {
             setName(customer.name);
             setClassification(customer.classification || '');
-            setNotes(customer.notes || '');
+            setGeneralNotes(customer.generalNotes || '');
         } else {
             setName('');
             setClassification('');
-            setNotes('');
+            setGeneralNotes('');
         }
     }
   }, [customer, isOpen]);
@@ -40,7 +40,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, cu
           id: customer ? customer.id : undefined,
           name,
           classification: classification.trim(),
-          notes: notes.trim(),
+          generalNotes: generalNotes.trim(),
         };
         await onSave(customerData);
         onClose();
@@ -78,10 +78,10 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, cu
             />
         </div>
         <div>
-          <label className="block mb-1 font-medium">סיכום / הערות</label>
+          <label className="block mb-1 font-medium">הערות כלליות</label>
           <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            value={generalNotes}
+            onChange={(e) => setGeneralNotes(e.target.value)}
             className={commonInputClasses}
             rows={4}
             placeholder="רשום כאן פרטים חשובים על הלקוח..."
