@@ -47,6 +47,12 @@ export interface Update {
   text: string;
 }
 
+export interface SubTask {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -54,10 +60,12 @@ export interface Task {
   type: TaskType;
   customerId?: string; 
   projectId?: string; 
+  ideaId?: string;
   dueDate?: string; 
   priority: TaskPriority;
   status: TaskStatus;
   createdAt: string;
+  subTasks?: SubTask[];
 }
 
 export interface Customer {
@@ -68,8 +76,20 @@ export interface Customer {
   updates?: Update[];
 }
 
-export interface Project {
+export interface ProjectLink {
   id: string;
+  title: string;
+  url: string;
+}
+
+export interface ProjectMilestone {
+  id: string;
+  date: string;
+  description: string;
+}
+
+export interface Project {
+  id:string;
   title: string;
   description?: string;
   ideaId?: string;
@@ -78,6 +98,8 @@ export interface Project {
   startDate?: string;
   endDate?: string;
   budget?: number;
+  links?: ProjectLink[];
+  milestones?: ProjectMilestone[];
 }
 
 export interface Idea {

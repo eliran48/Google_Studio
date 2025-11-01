@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, ReactElement } from 'react';
 // FIX: Imported the 'TaskPriority' type to resolve the 'Cannot find name' error.
-import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort, TaskType, TaskPriority, Update } from './types';
+import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort, TaskType, TaskPriority, Update, ProjectLink, ProjectMilestone, SubTask } from './types';
 import { db, auth } from './services/firebase';
 import { collection, getDocs, doc, updateDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -20,6 +20,8 @@ import IdeaForm from './components/ideas/IdeaForm';
 import LoginView from './components/views/LoginView';
 import CustomerForm from './components/customers/CustomerForm';
 import ConfirmationModal from './components/ui/ConfirmationModal';
+import SpeedDial, { SpeedDialAction } from './components/ui/SpeedDial';
+import { ChecklistIcon, ProjectIcon, CustomerIcon, IdeaIcon } from './components/ui/Icons';
 
 const App: React.FC = () => {
     const [view, setView] = useState<ViewType>('dashboard');
@@ -146,10 +148,12 @@ const App: React.FC = () => {
             type: taskToSave.type || TaskType.PERSONAL,
             customerId: taskToSave.customerId,
             projectId: taskToSave.projectId,
+            ideaId: taskToSave.ideaId,
             dueDate: taskToSave.dueDate,
             priority: taskToSave.priority || TaskPriority.NORMAL,
             status: isEditing ? taskToSave.status || TaskStatus.TODO : TaskStatus.TODO,
             createdAt: isEditing ? taskToSave.createdAt || new Date().toISOString() : new Date().toISOString(),
+            subTasks: taskToSave.subTasks || [],
         };
 
         try {
@@ -222,8 +226,9 @@ const App: React.FC = () => {
                 await updateDoc(projectDocRef, firestoreData);
                 setProjects(prev => prev.map(p => p.id === id ? { ...p, ...projectData } : p));
             } else {
-                const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), firestoreData);
-                setProjects(prev => [...prev, { ...projectData, id: docRef.id } as Project]);
+                 const projectWithDefaults = { ...firestoreData, links: [], milestones: [] };
+                const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), projectWithDefaults);
+                setProjects(prev => [...prev, { ...projectWithDefaults, id: docRef.id } as Project]);
             }
         } catch (error) {
             console.error("Error saving project:", error);
@@ -263,6 +268,65 @@ const App: React.FC = () => {
             message: `האם אתה בטוח שברצונך למחוק את הפרויקט "${projectTitle}"? פעולה זו תסיר את שיוך הפרויקט מכל המשימות הקשורות.`,
             onConfirm: () => handleDeleteProject(projectId),
         });
+    };
+    
+    const updateProjectSubCollection = async <T extends { id: string }>(
+        projectId: string,
+        collectionName: 'links' | 'milestones',
+        newItems: T[]
+    ) => {
+        if (!user) return;
+        const projectDocRef = doc(db, `users/${user.uid}/projects`, projectId);
+        try {
+            await updateDoc(projectDocRef, { [collectionName]: newItems });
+            setProjects(prev =>
+                prev.map(p =>
+                    p.id === projectId ? { ...p, [collectionName]: newItems } : p
+                )
+            );
+        } catch (error) {
+            console.error(`Error updating project ${collectionName}:`, error);
+        }
+    };
+
+    const handleSaveProjectLink = async (projectId: string, link: Omit<ProjectLink, 'id'> & { id?: string }) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        const links = project.links || [];
+        if (link.id) {
+            const updatedLinks = links.map(l => l.id === link.id ? { ...l, ...link } : l);
+            await updateProjectSubCollection(projectId, 'links', updatedLinks);
+        } else {
+            const newLink = { ...link, id: Date.now().toString() };
+            await updateProjectSubCollection(projectId, 'links', [...links, newLink]);
+        }
+    };
+
+    const handleDeleteProjectLink = async (projectId: string, linkId: string) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project || !project.links) return;
+        const updatedLinks = project.links.filter(l => l.id !== linkId);
+        await updateProjectSubCollection(projectId, 'links', updatedLinks);
+    };
+
+    const handleSaveProjectMilestone = async (projectId: string, milestone: Omit<ProjectMilestone, 'id'> & { id?: string }) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        const milestones = project.milestones || [];
+         if (milestone.id) {
+            const updatedMilestones = milestones.map(m => m.id === milestone.id ? { ...m, ...milestone } : m);
+            await updateProjectSubCollection(projectId, 'milestones', updatedMilestones);
+        } else {
+            const newMilestone = { ...milestone, date: new Date().toISOString(), id: Date.now().toString() };
+            await updateProjectSubCollection(projectId, 'milestones', [newMilestone, ...milestones]);
+        }
+    };
+    
+    const handleDeleteProjectMilestone = async (projectId: string, milestoneId: string) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project || !project.milestones) return;
+        const updatedMilestones = project.milestones.filter(m => m.id !== milestoneId);
+        await updateProjectSubCollection(projectId, 'milestones', updatedMilestones);
     };
 
     const handleSaveIdea = async (ideaToSave: Omit<Idea, 'id'> & { id?: string }) => {
@@ -397,17 +461,34 @@ const App: React.FC = () => {
             description: idea.description,
             ideaId: idea.id,
             status: ProjectStatus.NOT_STARTED,
+            links: [],
+            milestones: [],
         };
         try {
             const batch = writeBatch(db);
+            
             const projectDocRef = doc(collection(db, `users/${user.uid}/projects`));
             batch.set(projectDocRef, newProjectData);
+            
+            const tasksToUpdate = tasks.filter(t => t.ideaId === idea.id);
+            tasksToUpdate.forEach(task => {
+                const taskDocRef = doc(db, `users/${user.uid}/tasks`, task.id);
+                batch.update(taskDocRef, { projectId: projectDocRef.id, ideaId: undefined });
+            });
+
             const ideaDocRef = doc(db, `users/${user.uid}/ideas`, idea.id);
             batch.delete(ideaDocRef);
+            
             await batch.commit();
 
             setProjects(prev => [...prev, { ...newProjectData, id: projectDocRef.id } as Project]);
             setIdeas(prev => prev.filter(i => i.id !== idea.id));
+            setTasks(prev => prev.map(t => {
+                if (t.ideaId === idea.id) {
+                    return { ...t, projectId: projectDocRef.id, ideaId: undefined };
+                }
+                return t;
+            }));
             handleSetView('projects');
         } catch(error) {
             console.error("Error converting idea to project:", error);
@@ -417,8 +498,21 @@ const App: React.FC = () => {
     const handleDeleteIdea = async (ideaId: string) => {
         if (!user) return;
         try {
-            await deleteDoc(doc(db, `users/${user.uid}/ideas`, ideaId));
+            const batch = writeBatch(db);
+            
+            const ideaDocRef = doc(db, `users/${user.uid}/ideas`, ideaId);
+            batch.delete(ideaDocRef);
+
+            const tasksToUpdate = tasks.filter(t => t.ideaId === ideaId);
+            tasksToUpdate.forEach(task => {
+                const taskDocRef = doc(db, `users/${user.uid}/tasks`, task.id);
+                batch.update(taskDocRef, { ideaId: undefined });
+            });
+
+            await batch.commit();
+
             setIdeas(prev => prev.filter(i => i.id !== ideaId));
+            setTasks(prev => prev.map(t => (t.ideaId === ideaId ? { ...t, ideaId: undefined } : t)));
         } catch (error) {
             console.error("Error deleting idea:", error);
         }
@@ -432,6 +526,37 @@ const App: React.FC = () => {
         });
     };
 
+    const speedDialActions: SpeedDialAction[] = [
+      {
+        icon: <ChecklistIcon />,
+        label: 'הוסף משימה',
+        ariaLabel: 'הוסף משימה חדשה',
+        bgColor: 'bg-blue-500',
+        onClick: () => handleOpenNewTaskModal(),
+      },
+      {
+        icon: <ProjectIcon />,
+        label: 'הוסף פרויקט',
+        ariaLabel: 'הוסף פרויקט חדש',
+        bgColor: 'bg-green-500',
+        onClick: () => handleOpenNewProjectModal(),
+      },
+      {
+        icon: <CustomerIcon />,
+        label: 'הוסף לקוח',
+        ariaLabel: 'הוסף לקוח חדש',
+        bgColor: 'bg-teal-500',
+        onClick: handleOpenNewCustomerModal,
+      },
+      {
+        icon: <IdeaIcon />,
+        label: 'הוסף רעיון',
+        ariaLabel: 'הוסף רעיון חדש',
+        bgColor: 'bg-yellow-500',
+        onClick: handleOpenNewIdeaModal,
+      },
+    ];
+
     const renderView = () => {
         switch (view) {
             case 'dashboard':
@@ -439,15 +564,28 @@ const App: React.FC = () => {
             case 'tasks':
                 return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onAddTask={handleOpenNewTaskModal} />;
             case 'projects':
-                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} onAddProject={handleOpenNewProjectModal} />;
+                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} onAddProject={handleOpenNewProjectModal} onAddTask={handleOpenNewTaskModal} />;
             case 'customers':
                 return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddCustomer={handleOpenNewCustomerModal} onAddTask={handleOpenNewTaskModal} onAddProject={handleOpenNewProjectModal} />;
             case 'ideas':
-                return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} onAddIdea={handleOpenNewIdeaModal} onEditIdea={handleEditIdea} onDeleteIdea={requestDeleteIdea} />;
+                return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} onAddIdea={handleOpenNewIdeaModal} onEditIdea={handleEditIdea} onDeleteIdea={requestDeleteIdea} onAddTask={handleOpenNewTaskModal} />;
             case 'project-detail':
                 const project = projects.find(p => p.id === selectedItemId);
                 if (!project) return <div>Project not found</div>;
-                return <ProjectDetailView project={project} tasks={tasks.filter(t => t.projectId === selectedItemId)} customers={customers} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} />;
+                return <ProjectDetailView 
+                            project={project} 
+                            tasks={tasks.filter(t => t.projectId === selectedItemId)} 
+                            customers={customers} 
+                            onEditTask={handleEditTask} 
+                            onToggleStatus={requestToggleTaskStatus} 
+                            onEditProject={handleEditProject} 
+                            onDeleteProject={requestDeleteProject}
+                            onSaveLink={handleSaveProjectLink}
+                            onDeleteLink={handleDeleteProjectLink}
+                            onSaveMilestone={handleSaveProjectMilestone}
+                            onDeleteMilestone={handleDeleteProjectMilestone}
+                            onAddTask={handleOpenNewTaskModal}
+                        />;
             case 'customer-detail':
                  const customer = customers.find(c => c.id === selectedItemId);
                  if (!customer) return <div>Customer not found</div>
@@ -489,6 +627,7 @@ const App: React.FC = () => {
             <IdeaForm isOpen={isIdeaModalOpen} onClose={() => { setIsIdeaModalOpen(false); setEditingIdea(null); }} onSave={handleSaveIdea} idea={editingIdea} />
             <CustomerForm isOpen={isCustomerModalOpen} onClose={() => { setIsCustomerModalOpen(false); setEditingCustomer(null); }} onSave={handleSaveCustomer} customer={editingCustomer} />
             <ConfirmationModal isOpen={!!pendingAction} onClose={handleCancelAction} onConfirm={handleConfirmAction} title={pendingAction?.title || ''} message={pendingAction?.message || ''} />
+            <SpeedDial actions={speedDialActions} />
         </div>
     );
 };

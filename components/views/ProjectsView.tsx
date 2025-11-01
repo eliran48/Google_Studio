@@ -1,5 +1,5 @@
 import React from 'react';
-import { Project, Task, TaskStatus, ProjectStatus } from '../../types';
+import { Project, Task, TaskStatus, ProjectStatus, TaskType } from '../../types';
 import Card from '../ui/Card';
 import { EditIcon, TrashIcon, PlusIcon } from '../ui/Icons';
 
@@ -10,6 +10,7 @@ interface ProjectsViewProps {
   onEditProject: (project: Project) => void;
   onDeleteProject: (projectId: string, projectTitle: string) => void;
   onAddProject: (defaults?: Partial<Project>) => void;
+  onAddTask: (defaults: Partial<Task>) => void;
 }
 
 const statusStyles: Record<ProjectStatus, { text: string, bg: string }> = {
@@ -29,7 +30,7 @@ const ProjectStatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => 
 };
 
 
-const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject, onAddProject }) => {
+const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject, onAddProject, onAddTask }) => {
   const getProjectStats = (projectId: string) => {
     const projectTasks = tasks.filter(t => t.projectId === projectId);
     const completedTasks = projectTasks.filter(t => t.status === TaskStatus.DONE).length;
@@ -59,44 +60,57 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
           {projects.map(project => {
             const { totalTasks, progress } = getProjectStats(project.id);
             return (
-              <Card key={project.id} className="group hover:shadow-lg hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col" >
-                <div className="flex justify-between items-start">
-                    <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow space-y-2">
-                        <h3 className="text-xl font-bold mb-2 text-indigo-600 dark:text-indigo-400 flex-1 break-words pr-2">{project.title}</h3>
-                        <ProjectStatusBadge status={project.status} />
+              <Card key={project.id} className="group hover:shadow-lg hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col p-0" >
+                <div className="p-4 flex-grow">
+                    <div className="flex justify-between items-start">
+                        <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow space-y-2">
+                            <h3 className="text-xl font-bold mb-2 text-indigo-600 dark:text-indigo-400 flex-1 break-words pr-2">{project.title}</h3>
+                            <ProjectStatusBadge status={project.status} />
+                        </div>
+                        <div className="flex items-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onEditProject(project); }} 
+                                className="text-gray-400 hover:text-indigo-600 p-1 rounded-full"
+                                aria-label={`ערוך פרויקט ${project.title}`}
+                            >
+                                <EditIcon className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id, project.title); }} 
+                                className="text-gray-400 hover:text-red-600 p-1 rounded-full"
+                                aria-label={`מחק פרויקט ${project.title}`}
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onEditProject(project); }} 
-                            className="text-gray-400 hover:text-indigo-600 p-1 rounded-full"
-                            aria-label={`ערוך פרויקט ${project.title}`}
-                        >
-                            <EditIcon className="w-5 h-5" />
-                        </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id, project.title); }} 
-                            className="text-gray-400 hover:text-red-600 p-1 rounded-full"
-                            aria-label={`מחק פרויקט ${project.title}`}
-                        >
-                            <TrashIcon className="w-5 h-5" />
-                        </button>
+                     <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow mt-2">
+                        <p className="text-gray-600 dark:text-gray-300 mb-4 h-12 overflow-hidden">{project.description}</p>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+                        <span>התקדמות</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+                        <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <p className="text-xs text-gray-400">{totalTasks} משימות</p>
+                        <p className="text-xs text-gray-400">{project.customerIds?.length || 0} לקוחות</p>
+                      </div>
                     </div>
                 </div>
-                 <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow mt-2">
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 h-12 overflow-hidden">{project.description}</p>
-                </div>
-                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
-                  <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
-                    <span>התקדמות</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2">
-                    <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <p className="text-xs text-gray-400">{totalTasks} משימות</p>
-                    <p className="text-xs text-gray-400">{project.customerIds?.length || 0} לקוחות</p>
-                  </div>
+                <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onAddTask({ projectId: project.id, type: TaskType.BUSINESS });
+                        }}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-md transition-colors text-indigo-700 bg-indigo-100 hover:bg-indigo-200 dark:text-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-900"
+                    >
+                        הוסף משימה
+                    </button>
                 </div>
               </Card>
             );

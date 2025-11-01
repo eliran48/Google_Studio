@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { EditIcon } from '../ui/Icons';
+import { EditIcon, ChecklistIcon } from '../ui/Icons';
 
 interface TaskListProps {
   tasks: Task[];
@@ -64,6 +64,9 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
         <div className="space-y-4">
           {filteredTasks.map(task => {
             const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
+            const hasSubTasks = task.subTasks && task.subTasks.length > 0;
+            const completedSubTasks = hasSubTasks ? task.subTasks!.filter(st => st.isCompleted).length : 0;
+            
             return (
               <div 
                 key={task.id} 
@@ -98,6 +101,12 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
                   </div>
                 </div>
                 <div className="flex items-center gap-4 pl-2">
+                    {hasSubTasks && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400" title="התקדמות תתי-משימות">
+                            <ChecklistIcon className="w-4 h-4" />
+                            <span>{completedSubTasks}/{task.subTasks!.length}</span>
+                        </div>
+                    )}
                     <Badge priority={task.priority} />
                     <button 
                       onClick={(e) => {

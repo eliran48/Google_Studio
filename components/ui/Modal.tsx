@@ -18,7 +18,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
       role="dialog"
     >
       <div 
-        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl m-4 max-w-2xl w-full"
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl m-4 max-w-xl w-full"
         onClick={e => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Task, TaskType, TaskPriority, Project, Customer } from '../../types';
+import { Task, TaskType, TaskPriority, Project, Customer, SubTask } from '../../types';
 import Modal from '../ui/Modal';
+import { PlusIcon, TrashIcon } from '../ui/Icons';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.NORMAL);
+  const [subTasks, setSubTasks] = useState<SubTask[]>([]);
+  const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -29,10 +32,32 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
       setType(task?.type || TaskType.PERSONAL);
       setCustomerId(task?.customerId);
       setProjectId(task?.projectId);
-      setDueDate(task?.dueDate ? task.dueDate.split('T')[0] : ''); // Safely format for date input
+      setDueDate(task?.dueDate ? task.dueDate.split('T')[0] : '');
       setPriority(task?.priority || TaskPriority.NORMAL);
+      setSubTasks(task?.subTasks || []);
+      setNewSubTaskTitle('');
     }
   }, [task, isOpen]);
+  
+  const handleAddSubTask = () => {
+      if(newSubTaskTitle.trim()) {
+          const newSubTask: SubTask = {
+              id: Date.now().toString(),
+              title: newSubTaskTitle.trim(),
+              isCompleted: false,
+          };
+          setSubTasks([...subTasks, newSubTask]);
+          setNewSubTaskTitle('');
+      }
+  };
+  
+  const handleToggleSubTask = (id: string) => {
+      setSubTasks(subTasks.map(st => st.id === id ? {...st, isCompleted: !st.isCompleted} : st));
+  };
+  
+  const handleDeleteSubTask = (id: string) => {
+      setSubTasks(subTasks.filter(st => st.id !== id));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,15 +74,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
           projectId,
           dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
           priority,
-          // For existing tasks, preserve status and createdAt if they exist
           status: task?.status,
           createdAt: task?.createdAt,
+          subTasks: subTasks,
         };
         await onSave(taskData);
         onClose();
     } catch (error) {
         console.error("Failed to save task", error);
-        // Optionally, show an error to the user
     } finally {
         setIsSaving(false);
     }
@@ -112,6 +136,43 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
             <label className="block mb-1 font-medium">תאריך יעד</label>
             <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} />
         </div>
+        
+        {/* Sub-tasks section */}
+        <div className="pt-4 border-t dark:border-gray-700">
+            <label className="block mb-2 font-medium">תתי-משימות</label>
+            <div className="flex gap-2 mb-3">
+                <input 
+                    type="text" 
+                    value={newSubTaskTitle} 
+                    onChange={e => setNewSubTaskTitle(e.target.value)}
+                    placeholder="הוסף תת-משימה..."
+                    className={commonInputClasses}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubTask(); } }}
+                />
+                <button type="button" onClick={handleAddSubTask} className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800">
+                    <PlusIcon className="w-5 h-5"/>
+                </button>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+                {subTasks.map(st => (
+                    <div key={st.id} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded-md">
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                checked={st.isCompleted} 
+                                onChange={() => handleToggleSubTask(st.id)}
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <span className={st.isCompleted ? 'line-through text-gray-500' : ''}>{st.title}</span>
+                        </div>
+                        <button type="button" onClick={() => handleDeleteSubTask(st.id)} className="text-gray-400 hover:text-red-500">
+                            <TrashIcon className="w-4 h-4"/>
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+        
         <div className="flex justify-end gap-3 pt-4">
           <button type="button" onClick={onClose} disabled={isSaving} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50">ביטול</button>
           <button type="submit" disabled={isSaving} className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed w-24 text-center">
