@@ -5,7 +5,7 @@ import Modal from '../ui/Modal';
 interface IdeaFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (idea: Omit<Idea, 'id'> & { id?: string }) => void;
+  onSave: (idea: Omit<Idea, 'id'> & { id?: string }) => Promise<void>;
   idea: Idea | null;
 }
 
@@ -15,9 +15,11 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
   const [category, setCategory] = useState<IdeaCategory>(IdeaCategory.PRODUCT);
   const [impact, setImpact] = useState<IdeaImpact>(IdeaImpact.MEDIUM);
   const [effort, setEffort] = useState<IdeaEffort>(IdeaEffort.MEDIUM);
+  const [isSaving, setIsSaving] = useState(false);
 
    useEffect(() => {
     if (isOpen) {
+      setIsSaving(false);
       if (idea) {
         setTitle(idea.title);
         setDescription(idea.description);
@@ -34,18 +36,26 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
     }
   }, [idea, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
+    if (!title.trim() || !description.trim() || isSaving) return;
     
-    onSave({ 
-        id: idea?.id,
-        title, 
-        description, 
-        category, 
-        impact, 
-        effort 
-    });
+    setIsSaving(true);
+    try {
+        await onSave({ 
+            id: idea?.id,
+            title, 
+            description, 
+            category, 
+            impact, 
+            effort 
+        });
+        onClose();
+    } catch(error) {
+        console.error("Failed to save idea", error);
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500";
@@ -94,8 +104,10 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
             </div>
         </div>
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">ביטול</button>
-          <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">שמור רעיון</button>
+          <button type="button" onClick={onClose} disabled={isSaving} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50">ביטול</button>
+          <button type="submit" disabled={isSaving} className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed w-28 text-center">
+            {isSaving ? 'שומר...' : 'שמור רעיון'}
+            </button>
         </div>
       </form>
     </Modal>

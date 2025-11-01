@@ -1,5 +1,5 @@
-import React from 'react';
-import { Task, TaskStatus } from '../../types';
+import React, { useState } from 'react';
+import { Task, TaskStatus, TaskPriority } from '../../types';
 import Badge from '../ui/Badge';
 import { EditIcon, PlusIcon } from '../ui/Icons';
 
@@ -50,16 +50,16 @@ const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; o
 
 // The Column component
 const TaskColumn: React.FC<{ title: string; tasks: Task[]; onEditTask: (task: Task) => void; onToggleStatus: (taskId: string) => void; className: string; }> = ({ title, tasks, onEditTask, onToggleStatus, className }) => (
-    <div className="bg-gray-100 dark:bg-gray-900/50 rounded-xl p-4">
+    <div className="bg-gray-100 dark:bg-gray-900/50 rounded-xl p-4 flex flex-col h-[calc(100vh-12rem)]">
         <h3 className={`text-lg font-bold mb-4 px-2 ${className}`}>{title} ({tasks.length})</h3>
-        <div className="space-y-4 overflow-y-auto pr-2">
+        <div className="space-y-4 overflow-y-auto pr-1 pb-2 flex-1">
             {tasks.length > 0 ? (
                 tasks.map(task => (
                     <TaskKanbanCard key={task.id} task={task} onEditTask={onEditTask} onToggleStatus={onToggleStatus} />
                 ))
             ) : (
-                <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                    אין משימות להצגה.
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg h-24 flex items-center justify-center">
+                    <span>אין משימות</span>
                 </div>
             )}
         </div>
@@ -70,15 +70,33 @@ interface TasksViewProps {
     tasks: Task[];
     onEditTask: (task: Task) => void;
     onToggleStatus: (taskId: string) => void;
-    onAddTask: () => void;
+    onAddTask: (defaults?: Partial<Task>) => void;
 }
 
 const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus, onAddTask }) => {
+    const [showCompleted, setShowCompleted] = useState(true);
+
+    const priorityOrder: Record<TaskPriority, number> = {
+        [TaskPriority.URGENT]: 4,
+        [TaskPriority.HIGH]: 3,
+        [TaskPriority.NORMAL]: 2,
+        [TaskPriority.LOW]: 1,
+    };
+    
     const sortedTasks = [...tasks].sort((a, b) => {
-      if (a.dueDate && !b.dueDate) return -1;
-      if (!a.dueDate && b.dueDate) return 1;
-      if (!a.dueDate && !b.dueDate) return 0;
-      return new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime();
+      const priorityA = priorityOrder[a.priority];
+      const priorityB = priorityOrder[b.priority];
+      if (priorityB !== priorityA) {
+          return priorityB - priorityA; // Higher priority first
+      }
+
+      // Sort by due date (earliest first, no due date last)
+      if (a.dueDate && b.dueDate) {
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
     const todoTasks = sortedTasks.filter(t => t.status === TaskStatus.TODO);
@@ -89,18 +107,31 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">לוח משימות</h2>
-                <button
-                    onClick={onAddTask}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    <PlusIcon className="w-5 h-5" />
-                    <span>הוסף משימה</span>
-                </button>
+                <div className="flex items-center gap-4">
+                     <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <input 
+                            type="checkbox" 
+                            checked={showCompleted} 
+                            onChange={() => setShowCompleted(!showCompleted)}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>הצג טור "הושלם"</span>
+                    </label>
+                    <button
+                        onClick={() => onAddTask()}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                        <PlusIcon className="w-5 h-5" />
+                        <span>הוסף משימה</span>
+                    </button>
+                </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 ${showCompleted ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
                 <TaskColumn title="לביצוע" tasks={todoTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-red-500" />
                 <TaskColumn title="בתהליך" tasks={inProgressTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-yellow-500" />
-                <TaskColumn title="הושלם" tasks={doneTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-green-500" />
+                {showCompleted && (
+                    <TaskColumn title="הושלם" tasks={doneTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-green-500" />
+                )}
             </div>
         </div>
     );

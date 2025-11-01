@@ -1,13 +1,13 @@
 // FIX: Imported missing enums to be used in mock data.
-import { Task, Project, Customer, Idea, TaskType, TaskPriority, TaskStatus, CustomerClassification, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort } from '../types';
+import { Task, Project, Customer, Idea, TaskType, TaskPriority, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort } from '../types';
 
 export const initialCustomers: Customer[] = [
   // FIX: Added missing 'classification' property to satisfy the Customer type.
-  { id: 'cust-1', name: 'ישראלה ישראלי', email: 'israela@example.com', classification: CustomerClassification.ACTIVE },
+  { id: 'cust-1', name: 'ישראלה ישראלי', classification: 'פעיל', notes: 'לקוחה ותיקה, אוהבת יחס אישי.' },
   // FIX: Added missing 'classification' property to satisfy the Customer type.
-  { id: 'cust-2', name: 'משה כהן', email: 'moshe@example.com', classification: CustomerClassification.LEAD },
+  { id: 'cust-2', name: 'משה כהן', classification: 'ליד', notes: 'פוטנציאל גדול, צריך מעקב צמוד.' },
   // FIX: Added missing 'classification' property to satisfy the Customer type.
-  { id: 'cust-3', name: 'חברת הייטק בע"מ', email: 'contact@hightech.co.il', classification: CustomerClassification.VIP },
+  { id: 'cust-3', name: 'חברת הייטק בע"מ', classification: 'VIP', notes: '' },
 ];
 
 export const initialProjects: Project[] = [

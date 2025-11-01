@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Task, TaskStatus, Project, ViewType } from '../../types';
+import { Task, TaskStatus, Project, ViewType, TaskPriority } from '../../types';
 import TaskList from '../tasks/TaskList';
 import Card from '../ui/Card';
 import { ProjectFolderIcon } from '../ui/Icons';
@@ -21,20 +21,36 @@ const StatCard: React.FC<{title: string; value: number | string;}> = ({title, va
 );
 
 const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTask, onToggleStatus, onProjectSelect, setView }) => {
-  const { overdueTasks, upcomingTasks, stats } = useMemo(() => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+  const { allOpenTasks, stats } = useMemo(() => {
     const incompleteTasks = tasks.filter(t => t.status !== TaskStatus.DONE);
+
+    const priorityOrder: Record<TaskPriority, number> = {
+        [TaskPriority.URGENT]: 4,
+        [TaskPriority.HIGH]: 3,
+        [TaskPriority.NORMAL]: 2,
+        [TaskPriority.LOW]: 1,
+    };
     
-    const overdue = incompleteTasks.filter(t => t.dueDate && new Date(t.dueDate) < startOfToday);
-    
-    const upcoming = incompleteTasks.filter(t => {
-      if (!t.dueDate) return false;
-      const dueDate = new Date(t.dueDate);
-      const sevenDaysFromNow = new Date(startOfToday);
-      sevenDaysFromNow.setDate(startOfToday.getDate() + 7);
-      return dueDate >= startOfToday && dueDate <= sevenDaysFromNow;
+    const sortedOpenTasks = [...incompleteTasks].sort((a, b) => {
+        const priorityA = priorityOrder[a.priority];
+        const priorityB = priorityOrder[b.priority];
+        if (priorityB !== priorityA) {
+            return priorityB - priorityA; // Higher priority first
+        }
+
+        // Sort by due date (earliest first, no due date last)
+        if (a.dueDate && b.dueDate) {
+            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        if (a.dueDate) {
+            return -1; // a has a due date, b doesn't, so a comes first
+        }
+        if (b.dueDate) {
+            return 1; // b has a due date, a doesn't, so b comes first
+        }
+
+        // As a fallback, sort by creation date (oldest first)
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
     const statistics = {
@@ -44,7 +60,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
         todo: tasks.filter(t => t.status === TaskStatus.TODO).length,
     };
     
-    return { overdueTasks: overdue, upcomingTasks: upcoming, stats: statistics };
+    return { allOpenTasks: sortedOpenTasks, stats: statistics };
   }, [tasks]);
 
   return (
@@ -59,14 +75,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
             <TaskList
-              tasks={overdueTasks}
-              title="משימות באיחור"
-              onEditTask={onEditTask}
-              onToggleStatus={onToggleStatus}
-            />
-            <TaskList
-              tasks={upcomingTasks}
-              title="משימות לשבוע הקרוב"
+              tasks={allOpenTasks}
+              title="משימות פתוחות"
               onEditTask={onEditTask}
               onToggleStatus={onToggleStatus}
             />

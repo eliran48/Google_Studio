@@ -15,18 +15,16 @@ interface CustomerDetailViewProps {
 }
 
 const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks, projects, onEditTask, onToggleStatus, onEditCustomer, onDeleteCustomer }) => {
-    const customerProjects = projects.filter(p => tasks.some(t => t.projectId === p.id));
+    const customerProjects = projects.filter(p => p.customerIds?.includes(customer.id) || tasks.some(t => t.projectId === p.id && t.customerId === customer.id));
+    
   return (
     <div className="space-y-6">
       <Card>
         <div className="flex justify-between items-start">
             <div>
                 <h2 className="text-3xl font-bold text-teal-700 dark:text-teal-400">{customer.name}</h2>
-                <span className="text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full mt-2 inline-block">{customer.classification}</span>
-                {customer.email ? (
-                    <p className="mt-2 text-gray-600 dark:text-gray-300">{customer.email}</p>
-                ) : (
-                    <p className="mt-2 text-gray-500 dark:text-gray-400 italic">אין אימייל</p>
+                {customer.classification && (
+                    <span className="text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full mt-2 inline-block">{customer.classification}</span>
                 )}
             </div>
              <div className="flex items-center gap-2 flex-shrink-0">
@@ -41,10 +39,10 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-6">
             <TaskList tasks={tasks} onEditTask={onEditTask} title={`משימות עבור ${customer.name}`} onToggleStatus={onToggleStatus} />
         </div>
-        <div>
+        <div className="space-y-6">
             <Card>
                 <h3 className="text-xl font-bold mb-4">פרויקטים קשורים</h3>
                 {customerProjects.length > 0 ? (
@@ -57,6 +55,12 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
                     <p className="text-gray-500 dark:text-gray-400">אין פרויקטים המשויכים ללקוח זה.</p>
                 )}
             </Card>
+            {customer.notes && (
+                <Card>
+                    <h3 className="text-xl font-bold mb-4">הערות</h3>
+                    <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{customer.notes}</p>
+                </Card>
+            )}
         </div>
       </div>
     </div>

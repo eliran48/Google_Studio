@@ -23,13 +23,6 @@ export enum ProjectStatus {
   ON_HOLD = 'בהמתנה',
 }
 
-export enum CustomerClassification {
-  LEAD = 'ליד',
-  ACTIVE = 'פעיל',
-  PAST = 'עבר',
-  VIP = 'VIP',
-}
-
 export enum IdeaCategory {
   PRODUCT = 'מוצר',
   MARKETING = 'שיווק',
@@ -66,8 +59,8 @@ export interface Task {
 export interface Customer {
   id: string;
   name: string;
-  email?: string;
-  classification: CustomerClassification;
+  classification?: string;
+  notes?: string;
 }
 
 export interface Project {

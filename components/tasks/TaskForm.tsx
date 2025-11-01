@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Task, TaskType, TaskPriority, TaskStatus, Project, Customer } from '../../types';
+import { Task, TaskType, TaskPriority, Project, Customer } from '../../types';
 import Modal from '../ui/Modal';
 
 interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: Omit<Task, 'id' | 'status' | 'createdAt'> & { id?: string }) => void;
-  task: Task | null;
+  onSave: (task: Partial<Task>) => Promise<void>;
+  task: Partial<Task> | null;
   projects: Project[];
   customers: Customer[];
 }
@@ -19,47 +19,54 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.NORMAL);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description || '');
-      setType(task.type);
-      setCustomerId(task.customerId);
-      setProjectId(task.projectId);
-      setDueDate(task.dueDate ? task.dueDate.split('T')[0] : ''); // Safely format for date input
-      setPriority(task.priority);
-    } else {
-      // Reset form for new task
-      setTitle('');
-      setDescription('');
-      setType(TaskType.PERSONAL);
-      setCustomerId(undefined);
-      setProjectId(undefined);
-      setDueDate('');
-      setPriority(TaskPriority.NORMAL);
+    if (isOpen) {
+      setIsSaving(false);
+      setTitle(task?.title || '');
+      setDescription(task?.description || '');
+      setType(task?.type || TaskType.PERSONAL);
+      setCustomerId(task?.customerId);
+      setProjectId(task?.projectId);
+      setDueDate(task?.dueDate ? task.dueDate.split('T')[0] : ''); // Safely format for date input
+      setPriority(task?.priority || TaskPriority.NORMAL);
     }
   }, [task, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const taskData = {
-      id: task ? task.id : undefined,
-      title,
-      description,
-      type,
-      customerId,
-      projectId,
-      dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-      priority,
-    };
-    onSave(taskData);
+    if (isSaving || !title.trim()) return;
+
+    setIsSaving(true);
+    try {
+        const taskData: Partial<Task> = {
+          id: task?.id,
+          title,
+          description,
+          type,
+          customerId,
+          projectId,
+          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+          priority,
+          // For existing tasks, preserve status and createdAt if they exist
+          status: task?.status,
+          createdAt: task?.createdAt,
+        };
+        await onSave(taskData);
+        onClose();
+    } catch (error) {
+        console.error("Failed to save task", error);
+        // Optionally, show an error to the user
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500";
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={task ? 'עריכת משימה' : 'משימה חדשה'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={task?.id ? 'עריכת משימה' : 'משימה חדשה'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block mb-1 font-medium">כותרת</label>
@@ -106,8 +113,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
             <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} />
         </div>
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">ביטול</button>
-          <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">שמירה</button>
+          <button type="button" onClick={onClose} disabled={isSaving} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50">ביטול</button>
+          <button type="submit" disabled={isSaving} className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed w-24 text-center">
+            {isSaving ? 'שומר...' : 'שמירה'}
+          </button>
         </div>
       </form>
     </Modal>

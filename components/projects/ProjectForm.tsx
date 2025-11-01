@@ -6,8 +6,8 @@ import { ChevronDownIcon } from '../ui/Icons';
 interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (project: Omit<Project, 'id'> & { id?: string }) => void;
-  project: Project | null;
+  onSave: (project: Partial<Project>) => Promise<void>;
+  project: Partial<Project> | null;
   customers: Customer[];
 }
 
@@ -21,6 +21,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
   const [budget, setBudget] = useState<number | ''>('');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -34,23 +35,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
 
   useEffect(() => {
     if (isOpen) {
-        if (project) {
-            setTitle(project.title);
-            setDescription(project.description || '');
-            setSelectedCustomerIds(project.customerIds || []);
-            setStatus(project.status || ProjectStatus.NOT_STARTED);
-            setStartDate(project.startDate ? project.startDate.split('T')[0] : '');
-            setEndDate(project.endDate ? project.endDate.split('T')[0] : '');
-            setBudget(project.budget || '');
-        } else {
-            setTitle('');
-            setDescription('');
-            setSelectedCustomerIds([]);
-            setStatus(ProjectStatus.NOT_STARTED);
-            setStartDate('');
-            setEndDate('');
-            setBudget('');
-        }
+        setIsSaving(false);
+        setTitle(project?.title || '');
+        setDescription(project?.description || '');
+        setSelectedCustomerIds(project?.customerIds || []);
+        setStatus(project?.status || ProjectStatus.NOT_STARTED);
+        setStartDate(project?.startDate ? project.startDate.split('T')[0] : '');
+        setEndDate(project?.endDate ? project.endDate.split('T')[0] : '');
+        setBudget(project?.budget || '');
     }
   }, [project, isOpen]);
 
@@ -62,25 +54,36 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const projectData = {
-      id: project ? project.id : undefined,
-      title,
-      description,
-      customerIds: selectedCustomerIds,
-      status,
-      startDate: startDate ? new Date(startDate).toISOString() : undefined,
-      endDate: endDate ? new Date(endDate).toISOString() : undefined,
-      budget: typeof budget === 'number' ? budget : undefined,
-    };
-    onSave(projectData);
+    if (isSaving || !title.trim()) return;
+
+    setIsSaving(true);
+    try {
+        const projectData: Partial<Project> = {
+          id: project?.id,
+          title,
+          description,
+          customerIds: selectedCustomerIds,
+          status,
+          startDate: startDate ? new Date(startDate).toISOString() : undefined,
+          endDate: endDate ? new Date(endDate).toISOString() : undefined,
+          budget: typeof budget === 'number' ? budget : undefined,
+          ideaId: project?.ideaId,
+        };
+        await onSave(projectData);
+        onClose();
+    } catch (error) {
+        console.error("Failed to save project", error);
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500";
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={project ? "עריכת פרויקט" : "פרויקט חדש"}>
+    <Modal isOpen={isOpen} onClose={onClose} title={project?.id ? "עריכת פרויקט" : "פרויקט חדש"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block mb-1 font-medium">שם הפרויקט</label>
@@ -162,8 +165,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">ביטול</button>
-          <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">שמור פרויקט</button>
+          <button type="button" onClick={onClose} disabled={isSaving} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50">ביטול</button>
+          <button type="submit" disabled={isSaving} className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed w-28 text-center">
+            {isSaving ? 'שומר...' : 'שמור פרויקט'}
+          </button>
         </div>
       </form>
     </Modal>

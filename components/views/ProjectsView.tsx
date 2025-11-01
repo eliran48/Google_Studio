@@ -9,7 +9,7 @@ interface ProjectsViewProps {
   onProjectSelect: (projectId: string) => void;
   onEditProject: (project: Project) => void;
   onDeleteProject: (projectId: string, projectTitle: string) => void;
-  onAddProject: () => void;
+  onAddProject: (defaults?: Partial<Project>) => void;
 }
 
 const statusStyles: Record<ProjectStatus, { text: string, bg: string }> = {
@@ -43,7 +43,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">פרויקטים</h2>
             <button
-                onClick={onAddProject}
+                onClick={() => onAddProject()}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
                 <PlusIcon className="w-5 h-5" />

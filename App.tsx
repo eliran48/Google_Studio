@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, CustomerClassification, IdeaCategory, IdeaImpact, IdeaEffort } from './types';
+// FIX: Imported the 'TaskPriority' type to resolve the 'Cannot find name' error.
+import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort, TaskType, TaskPriority } from './types';
 import { db, auth } from './services/firebase';
 import { collection, getDocs, doc, updateDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -34,9 +35,9 @@ const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
 
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null);
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-    const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null);
     const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
     const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -114,9 +115,9 @@ const App: React.FC = () => {
     };
     
     // --- Modal Open/Close Handlers ---
-    const handleOpenNewTaskModal = () => { setEditingTask(null); setIsTaskModalOpen(true); };
+    const handleOpenNewTaskModal = (defaults: Partial<Task> = {}) => { setEditingTask(defaults); setIsTaskModalOpen(true); };
     const handleEditTask = (task: Task) => { setEditingTask(task); setIsTaskModalOpen(true); };
-    const handleOpenNewProjectModal = () => { setEditingProject(null); setIsProjectModalOpen(true); };
+    const handleOpenNewProjectModal = (defaults: Partial<Project> = {}) => { setEditingProject(defaults); setIsProjectModalOpen(true); };
     const handleEditProject = (project: Project) => { setEditingProject(project); setIsProjectModalOpen(true); };
     const handleOpenNewCustomerModal = () => { setEditingCustomer(null); setIsCustomerModalOpen(true); };
     const handleEditCustomer = (customer: Customer) => { setEditingCustomer(customer); setIsCustomerModalOpen(true); };
@@ -133,22 +134,22 @@ const App: React.FC = () => {
     const handleCancelAction = () => setPendingAction(null);
 
     // --- Save Handlers ---
-    const handleSaveTask = async (taskToSave: Omit<Task, 'id' | 'status' | 'createdAt'> & { id?: string }) => {
-        if (!user) return;
+    const handleSaveTask = async (taskToSave: Partial<Task>) => {
+        if (!user) throw new Error("User not authenticated");
         
-        const existingTask = taskToSave.id ? tasks.find(t => t.id === taskToSave.id) : null;
-
+        const isEditing = !!taskToSave.id;
+        
         const taskWithMetadata: Task = {
-            id: existingTask?.id || '',
-            title: taskToSave.title,
+            id: taskToSave.id || '',
+            title: taskToSave.title || 'ללא כותרת',
             description: taskToSave.description,
-            type: taskToSave.type,
+            type: taskToSave.type || TaskType.PERSONAL,
             customerId: taskToSave.customerId,
             projectId: taskToSave.projectId,
             dueDate: taskToSave.dueDate,
-            priority: taskToSave.priority,
-            status: existingTask?.status || TaskStatus.TODO,
-            createdAt: existingTask?.createdAt || new Date().toISOString(),
+            priority: taskToSave.priority || TaskPriority.NORMAL,
+            status: isEditing ? taskToSave.status || TaskStatus.TODO : TaskStatus.TODO,
+            createdAt: isEditing ? taskToSave.createdAt || new Date().toISOString() : new Date().toISOString(),
         };
 
         try {
@@ -170,11 +171,9 @@ const App: React.FC = () => {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/tasks`), firestoreData);
                 setTasks(prevTasks => [...prevTasks, { ...taskWithMetadata, id: docRef.id }]);
             }
-
-            setIsTaskModalOpen(false);
-            setEditingTask(null);
         } catch (error) {
             console.error("Error saving task:", error);
+            throw error;
         }
     };
     
@@ -204,8 +203,8 @@ const App: React.FC = () => {
         });
     };
     
-    const handleSaveProject = async (projectToSave: Omit<Project, 'id'> & { id?: string }) => {
-        if (!user) return;
+    const handleSaveProject = async (projectToSave: Partial<Project>) => {
+        if (!user) throw new Error("User not authenticated");
         
         try {
             const { id, ...projectData } = { ...projectToSave, status: projectToSave.status || ProjectStatus.NOT_STARTED };
@@ -221,16 +220,14 @@ const App: React.FC = () => {
             if (id) {
                 const projectDocRef = doc(db, `users/${user.uid}/projects`, id);
                 await updateDoc(projectDocRef, firestoreData);
-                setProjects(prev => prev.map(p => p.id === id ? { ...projectData, id } as Project : p));
+                setProjects(prev => prev.map(p => p.id === id ? { ...p, ...projectData } : p));
             } else {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), firestoreData);
                 setProjects(prev => [...prev, { ...projectData, id: docRef.id } as Project]);
             }
-            
-            setIsProjectModalOpen(false);
-            setEditingProject(null);
         } catch (error) {
             console.error("Error saving project:", error);
+            throw error;
         }
     };
 
@@ -269,7 +266,7 @@ const App: React.FC = () => {
     };
 
     const handleSaveIdea = async (ideaToSave: Omit<Idea, 'id'> & { id?: string }) => {
-        if (!user) return;
+        if (!user) throw new Error("User not authenticated");
 
         const ideaWithDefaults = {
             ...ideaToSave,
@@ -288,36 +285,33 @@ const App: React.FC = () => {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/ideas`), ideaData);
                 setIdeas(prev => [...prev, { ...ideaData, id: docRef.id } as Idea]);
             }
-            setIsIdeaModalOpen(false);
-            setEditingIdea(null);
         } catch (error) {
             console.error("Error saving idea:", error);
+            throw error;
         }
     };
     
-    const handleSaveCustomer = async (customerToSave: Omit<Customer, 'id'> & { id?: string }) => {
-        if (!user) return;
+    const handleSaveCustomer = async (customerToSave: Omit<Customer, 'id'> & { id?: string }): Promise<void> => {
+        if (!user) {
+            throw new Error("User not authenticated");
+        }
 
         try {
-            const customerWithDefaults = {
-                ...customerToSave,
-                classification: customerToSave.classification || CustomerClassification.LEAD
-            };
-            const { id, ...customerData } = customerWithDefaults;
+            const { id, ...customerData } = customerToSave;
 
             if (id) {
+                // Update
                 const customerDocRef = doc(db, `users/${user.uid}/customers`, id);
                 await updateDoc(customerDocRef, customerData);
-                setCustomers(prev => prev.map(c => c.id === id ? { ...customerData, id } as Customer : c));
+                setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...customerData } : c));
             } else {
+                // Create
                 const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerData);
                 setCustomers(prev => [...prev, { ...customerData, id: docRef.id } as Customer]);
             }
-            
-            setIsCustomerModalOpen(false);
-            setEditingCustomer(null);
         } catch (error) {
             console.error("Error saving customer:", error);
+            throw error;
         }
     };
 
@@ -418,7 +412,7 @@ const App: React.FC = () => {
             case 'projects':
                 return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} onAddProject={handleOpenNewProjectModal} />;
             case 'customers':
-                return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddCustomer={handleOpenNewCustomerModal} />;
+                return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddCustomer={handleOpenNewCustomerModal} onAddTask={handleOpenNewTaskModal} onAddProject={handleOpenNewProjectModal} />;
             case 'ideas':
                 return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} onAddIdea={handleOpenNewIdeaModal} onEditIdea={handleEditIdea} onDeleteIdea={requestDeleteIdea} />;
             case 'project-detail':

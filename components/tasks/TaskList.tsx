@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
@@ -12,6 +12,19 @@ interface TaskListProps {
 }
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleStatus }) => {
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  const hasCompletedTasks = useMemo(() => tasks.some(t => t.status === TaskStatus.DONE), [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    // If the toggle is on, show all tasks.
+    if (showCompleted) {
+      return tasks;
+    }
+    // Otherwise, show only non-completed tasks.
+    return tasks.filter(task => task.status !== TaskStatus.DONE);
+  }, [tasks, showCompleted]);
+
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'אין תאריך יעד';
@@ -28,58 +41,77 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
 
   return (
     <Card>
-      <h3 className="text-xl font-bold mb-4">{title}</h3>
-      {tasks.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 py-4">אין משימות להצגה.</p>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">{title}</h3>
+        {hasCompletedTasks && (
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-300">
+            <input
+              type="checkbox"
+              checked={showCompleted}
+              onChange={() => setShowCompleted(!showCompleted)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              aria-label="הצג משימות שהושלמו"
+            />
+            <span>הצג משימות שהושלמו</span>
+          </label>
+        )}
+      </div>
+      {filteredTasks.length === 0 ? (
+        <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+            {hasCompletedTasks && !showCompleted ? 'כל המשימות הפתוחות הושלמו! סמן את התיבה כדי להציג את כולן.' : 'אין משימות להצגה.'}
+        </p>
       ) : (
         <div className="space-y-4">
-          {tasks.map(task => (
-            <div 
-              key={task.id} 
-              onClick={() => onEditTask(task)}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-shadow hover:shadow-md cursor-pointer"
-            >
-              <div className="flex items-start gap-4 flex-1 min-w-0">
-                <div onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={task.status === TaskStatus.DONE}
-                    onChange={(e) => {
-                      e.preventDefault();
-                      onToggleStatus(task.id);
-                    }}
-                    className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer mt-1 flex-shrink-0"
-                    aria-labelledby={`task-title-${task.id}`}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p id={`task-title-${task.id}`} className={`font-medium truncate ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
-                    {task.title}
-                  </p>
-                  {task.description && (
-                     <p className={`text-sm text-gray-500 dark:text-gray-400 truncate ${task.status === TaskStatus.DONE ? 'line-through' : ''}`}>
-                      {task.description}
+          {filteredTasks.map(task => {
+            const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
+            return (
+              <div 
+                key={task.id} 
+                onClick={() => onEditTask(task)}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-shadow hover:shadow-md cursor-pointer"
+              >
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={task.status === TaskStatus.DONE}
+                      onChange={(e) => {
+                        e.preventDefault();
+                        onToggleStatus(task.id);
+                      }}
+                      className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer mt-1 flex-shrink-0"
+                      aria-labelledby={`task-title-${task.id}`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p id={`task-title-${task.id}`} className={`font-medium truncate ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
+                      {task.title}
                     </p>
-                  )}
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    תאריך יעד: {formatDate(task.dueDate)}
-                  </p>
+                    {task.description && (
+                       <p className={`text-sm text-gray-500 dark:text-gray-400 truncate ${task.status === TaskStatus.DONE ? 'line-through' : ''}`}>
+                        {task.description}
+                      </p>
+                    )}
+                    <p className={`text-sm mt-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                      תאריך יעד: {formatDate(task.dueDate)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 pl-2">
+                    <Badge priority={task.priority} />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditTask(task);
+                      }} 
+                      className="text-gray-400 hover:text-indigo-600" aria-label={`ערוך משימה ${task.title}`}
+                    >
+                        <EditIcon className="w-5 h-5" />
+                    </button>
                 </div>
               </div>
-              <div className="flex items-center gap-4 pl-2">
-                  <Badge priority={task.priority} />
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditTask(task);
-                    }} 
-                    className="text-gray-400 hover:text-indigo-600" aria-label={`ערוך משימה ${task.title}`}
-                  >
-                      <EditIcon className="w-5 h-5" />
-                  </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </Card>
