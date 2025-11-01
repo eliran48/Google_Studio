@@ -22,6 +22,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
         <div className="flex justify-between items-start">
             <div>
                 <h2 className="text-3xl font-bold text-teal-700 dark:text-teal-400">{customer.name}</h2>
+                <span className="text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full mt-2 inline-block">{customer.classification}</span>
                 {customer.email ? (
                     <p className="mt-2 text-gray-600 dark:text-gray-300">{customer.email}</p>
                 ) : (

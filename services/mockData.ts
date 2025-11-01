@@ -1,15 +1,22 @@
-import { Task, Project, Customer, Idea, TaskType, TaskPriority, TaskStatus } from '../types';
+// FIX: Imported missing enums to be used in mock data.
+import { Task, Project, Customer, Idea, TaskType, TaskPriority, TaskStatus, CustomerClassification, ProjectStatus, IdeaCategory, IdeaImpact, IdeaEffort } from '../types';
 
 export const initialCustomers: Customer[] = [
-  { id: 'cust-1', name: 'ישראלה ישראלי', email: 'israela@example.com' },
-  { id: 'cust-2', name: 'משה כהן', email: 'moshe@example.com' },
-  { id: 'cust-3', name: 'חברת הייטק בע"מ', email: 'contact@hightech.co.il' },
+  // FIX: Added missing 'classification' property to satisfy the Customer type.
+  { id: 'cust-1', name: 'ישראלה ישראלי', email: 'israela@example.com', classification: CustomerClassification.ACTIVE },
+  // FIX: Added missing 'classification' property to satisfy the Customer type.
+  { id: 'cust-2', name: 'משה כהן', email: 'moshe@example.com', classification: CustomerClassification.LEAD },
+  // FIX: Added missing 'classification' property to satisfy the Customer type.
+  { id: 'cust-3', name: 'חברת הייטק בע"מ', email: 'contact@hightech.co.il', classification: CustomerClassification.VIP },
 ];
 
 export const initialProjects: Project[] = [
-  { id: 'proj-1', title: 'פיתוח אפליקציה חדשה', description: 'אפליקציית מובייל לניהול הוצאות.' },
-  { id: 'proj-2', title: 'קמפיין שיווקי Q3', description: 'השקת קמפיין ברשתות החברתיות.' },
-  { id: 'proj-3', title: 'אתר תדמית חדש', description: 'שדרוג האתר הישן לעיצוב מודרני ורספונסיבי.' },
+  // FIX: Added missing 'status' property to satisfy the Project type.
+  { id: 'proj-1', title: 'פיתוח אפליקציה חדשה', description: 'אפליקציית מובייל לניהול הוצאות.', status: ProjectStatus.IN_PROGRESS },
+  // FIX: Added missing 'status' property to satisfy the Project type.
+  { id: 'proj-2', title: 'קמפיין שיווקי Q3', description: 'השקת קמפיין ברשתות החברתיות.', status: ProjectStatus.NOT_STARTED },
+  // FIX: Added missing 'status' property to satisfy the Project type.
+  { id: 'proj-3', title: 'אתר תדמית חדש', description: 'שדרוג האתר הישן לעיצוב מודרני ורספונסיבי.', status: ProjectStatus.COMPLETED },
 ];
 
 export const initialTasks: Task[] = [
@@ -90,8 +97,11 @@ export const initialTasks: Task[] = [
 ];
 
 export const initialIdeas: Idea[] = [
-    {id: 'idea-1', title: 'פלטפורמת קורסים אונליין', description: 'ליצור מערכת שתאפשר למרצים להעלות ולמכור קורסים דיגיטליים במגוון נושאים.'},
-    {id: 'idea-2', title: 'שירות משלוחי אוכל בריא', description: 'אפליקציה להזמנת ארוחות בריאות מוכנות עם תפריט משתנה מדי שבוע.'},
+    // FIX: Added missing 'category', 'impact', and 'effort' properties to satisfy the Idea type.
+    {id: 'idea-1', title: 'פלטפורמת קורסים אונליין', description: 'ליצור מערכת שתאפשר למרצים להעלות ולמכור קורסים דיגיטליים במגוון נושאים.', category: IdeaCategory.PRODUCT, impact: IdeaImpact.HIGH, effort: IdeaEffort.HIGH},
+    // FIX: Added missing 'category', 'impact', and 'effort' properties to satisfy the Idea type.
+    {id: 'idea-2', title: 'שירות משלוחי אוכל בריא', description: 'אפליקציה להזמנת ארוחות בריאות מוכנות עם תפריט משתנה מדי שבוע.', category: IdeaCategory.PRODUCT, impact: IdeaImpact.MEDIUM, effort: IdeaEffort.MEDIUM},
     // FIX: Removed a large block of erroneous text and replaced it with a valid 'Idea' object.
-    {id: 'idea-3', title: 'מרקטפלייס לעבודות יד', description: 'פלטפורמה שתחבר בין אמנים ויוצרים לבין קהל שמחפש מוצרים ייחודיים בעבודת יד.'},
+    // FIX: Added missing 'category', 'impact', and 'effort' properties to satisfy the Idea type.
+    {id: 'idea-3', title: 'מרקטפלייס לעבודות יד', description: 'פלטפורמה שתחבר בין אמנים ויוצרים לבין קהל שמחפש מוצרים ייחודיים בעבודת יד.', category: IdeaCategory.MARKETING, impact: IdeaImpact.HIGH, effort: IdeaEffort.MEDIUM},
 ];

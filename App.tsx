@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ViewType, Task, Project, Customer, Idea, TaskStatus } from './types';
+import { ViewType, Task, Project, Customer, Idea, TaskStatus, ProjectStatus, CustomerClassification, IdeaCategory, IdeaImpact, IdeaEffort } from './types';
 import { db, auth } from './services/firebase';
 import { collection, getDocs, doc, updateDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 import Sidebar from './components/layout/Sidebar';
-import Header, { HeaderAction } from './components/layout/Header';
+import Header from './components/layout/Header';
 import DashboardView from './components/views/DashboardView';
 import ProjectsView from './components/views/ProjectsView';
 import CustomersView from './components/views/CustomersView';
@@ -14,7 +14,6 @@ import ProjectDetailView from './components/views/ProjectDetailView';
 import CustomerDetailView from './components/views/CustomerDetailView';
 import TasksView from './components/views/TasksView';
 import TaskForm from './components/tasks/TaskForm';
-import { PlusIcon, ProjectFolderIcon, LightBulbIcon, UserGroupIcon } from './components/ui/Icons';
 import ProjectForm from './components/projects/ProjectForm';
 import IdeaForm from './components/ideas/IdeaForm';
 import LoginView from './components/views/LoginView';
@@ -39,6 +38,7 @@ const App: React.FC = () => {
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
+    const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -120,6 +120,8 @@ const App: React.FC = () => {
     const handleEditProject = (project: Project) => { setEditingProject(project); setIsProjectModalOpen(true); };
     const handleOpenNewCustomerModal = () => { setEditingCustomer(null); setIsCustomerModalOpen(true); };
     const handleEditCustomer = (customer: Customer) => { setEditingCustomer(customer); setIsCustomerModalOpen(true); };
+    const handleOpenNewIdeaModal = () => { setEditingIdea(null); setIsIdeaModalOpen(true); };
+    const handleEditIdea = (idea: Idea) => { setEditingIdea(idea); setIsIdeaModalOpen(true);};
     
     // --- Confirmation Modal Logic ---
     const handleConfirmAction = async () => {
@@ -149,9 +151,6 @@ const App: React.FC = () => {
             createdAt: existingTask?.createdAt || new Date().toISOString(),
         };
 
-        setIsTaskModalOpen(false);
-        setEditingTask(null);
-        
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { id, ...taskData } = taskWithMetadata;
@@ -171,6 +170,9 @@ const App: React.FC = () => {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/tasks`), firestoreData);
                 setTasks(prevTasks => [...prevTasks, { ...taskWithMetadata, id: docRef.id }]);
             }
+
+            setIsTaskModalOpen(false);
+            setEditingTask(null);
         } catch (error) {
             console.error("Error saving task:", error);
         }
@@ -204,16 +206,15 @@ const App: React.FC = () => {
     
     const handleSaveProject = async (projectToSave: Omit<Project, 'id'> & { id?: string }) => {
         if (!user) return;
-        setIsProjectModalOpen(false);
-        setEditingProject(null);
+        
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id, ...projectData } = projectToSave;
+            const { id, ...projectData } = { ...projectToSave, status: projectToSave.status || ProjectStatus.NOT_STARTED };
 
             const firestoreData: { [key: string]: any } = {};
             Object.keys(projectData).forEach(key => {
-                 if (projectData[key as keyof typeof projectData] !== undefined) {
-                    firestoreData[key] = projectData[key as keyof typeof projectData];
+                 const value = projectData[key as keyof typeof projectData];
+                 if (value !== undefined) {
+                    firestoreData[key] = value;
                 }
             });
 
@@ -225,6 +226,9 @@ const App: React.FC = () => {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/projects`), firestoreData);
                 setProjects(prev => [...prev, { ...projectData, id: docRef.id } as Project]);
             }
+            
+            setIsProjectModalOpen(false);
+            setEditingProject(null);
         } catch (error) {
             console.error("Error saving project:", error);
         }
@@ -264,12 +268,28 @@ const App: React.FC = () => {
         });
     };
 
-    const handleSaveIdea = async (ideaToSave: Omit<Idea, 'id'>) => {
+    const handleSaveIdea = async (ideaToSave: Omit<Idea, 'id'> & { id?: string }) => {
         if (!user) return;
-        setIsIdeaModalOpen(false);
+
+        const ideaWithDefaults = {
+            ...ideaToSave,
+            category: ideaToSave.category || IdeaCategory.PRODUCT,
+            impact: ideaToSave.impact || IdeaImpact.MEDIUM,
+            effort: ideaToSave.effort || IdeaEffort.MEDIUM,
+        }
+
         try {
-            const docRef = await addDoc(collection(db, `users/${user.uid}/ideas`), ideaToSave);
-            setIdeas(prev => [...prev, { ...ideaToSave, id: docRef.id } as Idea]);
+            const { id, ...ideaData } = ideaWithDefaults;
+            if (id) {
+                const ideaDocRef = doc(db, `users/${user.uid}/ideas`, id);
+                await updateDoc(ideaDocRef, ideaData);
+                setIdeas(prev => prev.map(i => i.id === id ? { ...ideaData, id } as Idea : i));
+            } else {
+                const docRef = await addDoc(collection(db, `users/${user.uid}/ideas`), ideaData);
+                setIdeas(prev => [...prev, { ...ideaData, id: docRef.id } as Idea]);
+            }
+            setIsIdeaModalOpen(false);
+            setEditingIdea(null);
         } catch (error) {
             console.error("Error saving idea:", error);
         }
@@ -277,18 +297,25 @@ const App: React.FC = () => {
     
     const handleSaveCustomer = async (customerToSave: Omit<Customer, 'id'> & { id?: string }) => {
         if (!user) return;
-        setIsCustomerModalOpen(false);
-        setEditingCustomer(null);
+
         try {
-            const { id, ...customerData } = customerToSave;
-            if (id) { // Update
+            const customerWithDefaults = {
+                ...customerToSave,
+                classification: customerToSave.classification || CustomerClassification.LEAD
+            };
+            const { id, ...customerData } = customerWithDefaults;
+
+            if (id) {
                 const customerDocRef = doc(db, `users/${user.uid}/customers`, id);
                 await updateDoc(customerDocRef, customerData);
                 setCustomers(prev => prev.map(c => c.id === id ? { ...customerData, id } as Customer : c));
-            } else { // Create
+            } else {
                 const docRef = await addDoc(collection(db, `users/${user.uid}/customers`), customerData);
                 setCustomers(prev => [...prev, { ...customerData, id: docRef.id } as Customer]);
             }
+            
+            setIsCustomerModalOpen(false);
+            setEditingCustomer(null);
         } catch (error) {
             console.error("Error saving customer:", error);
         }
@@ -346,6 +373,7 @@ const App: React.FC = () => {
             title: idea.title,
             description: idea.description,
             ideaId: idea.id,
+            status: ProjectStatus.NOT_STARTED,
         };
         try {
             const batch = writeBatch(db);
@@ -362,19 +390,37 @@ const App: React.FC = () => {
             console.error("Error converting idea to project:", error);
         }
     };
+    
+    const handleDeleteIdea = async (ideaId: string) => {
+        if (!user) return;
+        try {
+            await deleteDoc(doc(db, `users/${user.uid}/ideas`, ideaId));
+            setIdeas(prev => prev.filter(i => i.id !== ideaId));
+        } catch (error) {
+            console.error("Error deleting idea:", error);
+        }
+    }
+
+    const requestDeleteIdea = (idea: Idea) => {
+        setPendingAction({
+            title: 'מחיקת רעיון',
+            message: `האם אתה בטוח שברצונך למחוק את הרעיון "${idea.title}"?`,
+            onConfirm: () => handleDeleteIdea(idea.id),
+        });
+    };
 
     const renderView = () => {
         switch (view) {
             case 'dashboard':
                 return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
             case 'tasks':
-                return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} />;
+                return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onAddTask={handleOpenNewTaskModal} />;
             case 'projects':
-                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} />;
+                return <ProjectsView projects={projects} tasks={tasks} onProjectSelect={(id) => handleItemSelect(id, 'project')} onEditProject={handleEditProject} onDeleteProject={requestDeleteProject} onAddProject={handleOpenNewProjectModal} />;
             case 'customers':
-                return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} />;
+                return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddCustomer={handleOpenNewCustomerModal} />;
             case 'ideas':
-                return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} />;
+                return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} onAddIdea={handleOpenNewIdeaModal} onEditIdea={handleEditIdea} onDeleteIdea={requestDeleteIdea} />;
             case 'project-detail':
                 const project = projects.find(p => p.id === selectedItemId);
                 if (!project) return <div>Project not found</div>;
@@ -399,13 +445,6 @@ const App: React.FC = () => {
     if (loading) {
         return <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-800" dir="rtl"><div className="text-xl font-semibold text-gray-700 dark:text-gray-200">טוען נתונים...</div></div>;
     }
-    
-    const addActions: HeaderAction[] = [
-        { icon: <PlusIcon />, onClick: handleOpenNewTaskModal, label: "משימה" },
-        { icon: <ProjectFolderIcon />, onClick: handleOpenNewProjectModal, label: "פרויקט" },
-        { icon: <UserGroupIcon />, onClick: handleOpenNewCustomerModal, label: "לקוח" },
-        { icon: <LightBulbIcon />, onClick: () => setIsIdeaModalOpen(true), label: "רעיון" },
-    ];
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100" dir="rtl">
@@ -416,7 +455,6 @@ const App: React.FC = () => {
                     onLogout={handleLogout} 
                     userEmail={user.email} 
                     onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
-                    addActions={addActions}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-6">
                     {renderView()}
@@ -425,7 +463,7 @@ const App: React.FC = () => {
             
             <TaskForm isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} onSave={handleSaveTask} task={editingTask} projects={projects} customers={customers} />
             <ProjectForm isOpen={isProjectModalOpen} onClose={() => { setIsProjectModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} project={editingProject} customers={customers} />
-            <IdeaForm isOpen={isIdeaModalOpen} onClose={() => setIsIdeaModalOpen(false)} onSave={handleSaveIdea} />
+            <IdeaForm isOpen={isIdeaModalOpen} onClose={() => { setIsIdeaModalOpen(false); setEditingIdea(null); }} onSave={handleSaveIdea} idea={editingIdea} />
             <CustomerForm isOpen={isCustomerModalOpen} onClose={() => { setIsCustomerModalOpen(false); setEditingCustomer(null); }} onSave={handleSaveCustomer} customer={editingCustomer} />
             <ConfirmationModal isOpen={!!pendingAction} onClose={handleCancelAction} onConfirm={handleConfirmAction} title={pendingAction?.title || ''} message={pendingAction?.message || ''} />
         </div>

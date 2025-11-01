@@ -1,7 +1,7 @@
 import React from 'react';
 import { Customer, Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
-import { UserGroupIcon, EditIcon, TrashIcon } from '../ui/Icons';
+import { UserGroupIcon, EditIcon, TrashIcon, PlusIcon } from '../ui/Icons';
 
 interface CustomersViewProps {
   customers: Customer[];
@@ -9,16 +9,26 @@ interface CustomersViewProps {
   onCustomerSelect: (customerId: string) => void;
   onEditCustomer: (customer: Customer) => void;
   onDeleteCustomer: (customerId: string, customerName: string) => void;
+  onAddCustomer: () => void;
 }
 
-const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCustomerSelect, onEditCustomer, onDeleteCustomer }) => {
+const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCustomerSelect, onEditCustomer, onDeleteCustomer, onAddCustomer }) => {
     const getCustomerTaskCount = (customerId: string) => {
         return tasks.filter(t => t.customerId === customerId && t.status !== TaskStatus.DONE).length;
     }
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">לקוחות</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">לקוחות</h2>
+        <button
+            onClick={onAddCustomer}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+            <PlusIcon className="w-5 h-5" />
+            <span>הוסף לקוח</span>
+        </button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {customers.map(customer => (
           <Card key={customer.id} className="group cursor-pointer hover:shadow-xl transition-shadow relative" onClick={() => onCustomerSelect(customer.id)}>
@@ -43,10 +53,11 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCusto
                     <UserGroupIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400"/>
                 </div>
                 <h3 className="text-lg font-bold">{customer.name}</h3>
+                <span className="text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full mt-1">{customer.classification}</span>
                 {customer.email ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 break-all">{customer.email}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 break-all mt-2">{customer.email}</p>
                 ) : (
-                    <p className="text-sm text-gray-400 dark:text-gray-500 italic">אין אימייל</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 italic mt-2">אין אימייל</p>
                 )}
                 <p className="mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{getCustomerTaskCount(customer.id)} משימות פעילות</p>
             </div>

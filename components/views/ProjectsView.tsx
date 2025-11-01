@@ -1,7 +1,7 @@
 import React from 'react';
-import { Project, Task, TaskStatus } from '../../types';
+import { Project, Task, TaskStatus, ProjectStatus } from '../../types';
 import Card from '../ui/Card';
-import { EditIcon, TrashIcon } from '../ui/Icons';
+import { EditIcon, TrashIcon, PlusIcon } from '../ui/Icons';
 
 interface ProjectsViewProps {
   projects: Project[];
@@ -9,9 +9,27 @@ interface ProjectsViewProps {
   onProjectSelect: (projectId: string) => void;
   onEditProject: (project: Project) => void;
   onDeleteProject: (projectId: string, projectTitle: string) => void;
+  onAddProject: () => void;
 }
 
-const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject }) => {
+const statusStyles: Record<ProjectStatus, { text: string, bg: string }> = {
+    [ProjectStatus.NOT_STARTED]: { text: 'text-gray-800 dark:text-gray-300', bg: 'bg-gray-200 dark:bg-gray-700' },
+    [ProjectStatus.IN_PROGRESS]: { text: 'text-blue-800 dark:text-blue-300', bg: 'bg-blue-100 dark:bg-blue-900' },
+    [ProjectStatus.COMPLETED]: { text: 'text-green-800 dark:text-green-300', bg: 'bg-green-100 dark:bg-green-900' },
+    [ProjectStatus.ON_HOLD]: { text: 'text-yellow-800 dark:text-yellow-300', bg: 'bg-yellow-100 dark:bg-yellow-900' },
+};
+
+const ProjectStatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => {
+    const styles = statusStyles[status] || statusStyles[ProjectStatus.NOT_STARTED];
+    return (
+        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${styles.bg} ${styles.text}`}>
+            {status}
+        </span>
+    );
+};
+
+
+const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject, onAddProject }) => {
   const getProjectStats = (projectId: string) => {
     const projectTasks = tasks.filter(t => t.projectId === projectId);
     const completedTasks = projectTasks.filter(t => t.status === TaskStatus.DONE).length;
@@ -22,7 +40,16 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">פרויקטים</h2>
+        <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">פרויקטים</h2>
+            <button
+                onClick={onAddProject}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+                <PlusIcon className="w-5 h-5" />
+                <span>הוסף פרויקט</span>
+            </button>
+        </div>
       {projects.length === 0 ? (
         <Card>
           <p className="text-center text-gray-500 dark:text-gray-400">לא נמצאו פרויקטים. נסה להוסיף פרויקט חדש!</p>
@@ -34,8 +61,9 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
             return (
               <Card key={project.id} className="group hover:shadow-lg hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col" >
                 <div className="flex justify-between items-start">
-                    <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow">
+                    <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow space-y-2">
                         <h3 className="text-xl font-bold mb-2 text-indigo-600 dark:text-indigo-400 flex-1 break-words pr-2">{project.title}</h3>
+                        <ProjectStatusBadge status={project.status} />
                     </div>
                     <div className="flex items-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
@@ -54,7 +82,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
                         </button>
                     </div>
                 </div>
-                 <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow">
+                 <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow mt-2">
                     <p className="text-gray-600 dark:text-gray-300 mb-4 h-12 overflow-hidden">{project.description}</p>
                 </div>
                 <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">

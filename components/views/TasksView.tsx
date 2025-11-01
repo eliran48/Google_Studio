@@ -1,7 +1,7 @@
 import React from 'react';
 import { Task, TaskStatus } from '../../types';
 import Badge from '../ui/Badge';
-import { EditIcon } from '../ui/Icons';
+import { EditIcon, PlusIcon } from '../ui/Icons';
 
 // A smaller Task Card for the Kanban view
 const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; onToggleStatus: (taskId: string) => void; }> = ({ task, onEditTask, onToggleStatus }) => {
@@ -70,9 +70,10 @@ interface TasksViewProps {
     tasks: Task[];
     onEditTask: (task: Task) => void;
     onToggleStatus: (taskId: string) => void;
+    onAddTask: () => void;
 }
 
-const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus }) => {
+const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus, onAddTask }) => {
     const sortedTasks = [...tasks].sort((a, b) => {
       if (a.dueDate && !b.dueDate) return -1;
       if (!a.dueDate && b.dueDate) return 1;
@@ -86,7 +87,16 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus
 
     return (
         <div>
-            <h2 className="text-2xl font-bold mb-6">לוח משימות</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">לוח משימות</h2>
+                <button
+                    onClick={onAddTask}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    <span>הוסף משימה</span>
+                </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <TaskColumn title="לביצוע" tasks={todoTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-red-500" />
                 <TaskColumn title="בתהליך" tasks={inProgressTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-yellow-500" />
