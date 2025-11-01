@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Task, TaskType, TaskPriority, Project, Customer, SubTask } from '../../types';
+import { Task, TaskType, TaskPriority, Project, Customer, SubTask, TaskStatus } from '../../types';
 import Modal from '../ui/Modal';
 import { PlusIcon, TrashIcon } from '../ui/Icons';
 
@@ -20,6 +20,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.NORMAL);
+  const [status, setStatus] = useState<TaskStatus>(TaskStatus.TODO);
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -34,6 +35,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
       setProjectId(task?.projectId);
       setDueDate(task?.dueDate ? task.dueDate.split('T')[0] : '');
       setPriority(task?.priority || TaskPriority.NORMAL);
+      setStatus(task?.status || TaskStatus.TODO);
       setSubTasks(task?.subTasks || []);
       setNewSubTaskTitle('');
     }
@@ -74,7 +76,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
           projectId,
           dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
           priority,
-          status: task?.status,
+          status: status,
           createdAt: task?.createdAt,
           subTasks: subTasks,
         };
@@ -114,6 +116,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
               </select>
             </div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label className="block mb-1 font-medium">סטטוס</label>
+                <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)} className={commonInputClasses}>
+                    {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block mb-1 font-medium">תאריך יעד</label>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} />
+            </div>
+        </div>
         {type === TaskType.BUSINESS && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -132,10 +146,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
             </div>
           </div>
         )}
-        <div>
-            <label className="block mb-1 font-medium">תאריך יעד</label>
-            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} />
-        </div>
         
         {/* Sub-tasks section */}
         <div className="pt-4 border-t dark:border-gray-700">
