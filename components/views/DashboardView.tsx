@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Task, TaskStatus, Project, ViewType, TaskPriority } from '../../types';
+import React, { useMemo, useState } from 'react';
+import { Task, TaskStatus, Project, ViewType, TaskPriority, TaskType } from '../../types';
 import TaskList from '../tasks/TaskList';
 import Card from '../ui/Card';
 import { ProjectFolderIcon } from '../ui/Icons';
@@ -13,15 +13,28 @@ interface DashboardViewProps {
   setView: (view: ViewType) => void;
 }
 
-const StatCard: React.FC<{title: string; value: number | string;}> = ({title, value}) => (
-    <Card className="text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-        <p className="text-3xl font-bold mt-1">{value}</p>
-    </Card>
-);
+const StatCard: React.FC<{ title: string; value: number | string; onClick?: () => void; isActive?: boolean }> = ({ title, value, onClick, isActive }) => {
+    const cardBaseClasses = "text-center transition-all duration-200 h-full flex flex-col justify-center";
+    const interactiveClasses = onClick ? "cursor-pointer hover:shadow-lg hover:-translate-y-1" : "";
+    const activeClasses = isActive ? "ring-2 ring-indigo-500 shadow-lg" : "shadow-md";
+
+    const cardContent = (
+         <Card className={`${cardBaseClasses} ${interactiveClasses} ${activeClasses}`}>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+            <p className="text-3xl font-bold mt-1">{value}</p>
+        </Card>
+    );
+
+    if (onClick) {
+        return <div onClick={onClick} className="h-full">{cardContent}</div>;
+    }
+    return cardContent;
+};
 
 const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTask, onToggleStatus, onProjectSelect, setView }) => {
-  const { allOpenTasks, stats } = useMemo(() => {
+  const [taskFilter, setTaskFilter] = useState<'all' | TaskType>('all');
+  
+  const { filteredOpenTasks, stats } = useMemo(() => {
     const incompleteTasks = tasks.filter(t => t.status !== TaskStatus.DONE);
 
     const priorityOrder: Record<TaskPriority, number> = {
@@ -53,20 +66,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
+    const filteredTasks = sortedOpenTasks.filter(task => {
+        if (taskFilter === 'all') return true;
+        return task.type === taskFilter;
+    });
+
     const statistics = {
         total: tasks.length,
         completed: tasks.filter(t => t.status === TaskStatus.DONE).length,
         inProgress: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
         todo: tasks.filter(t => t.status === TaskStatus.TODO).length,
+        personal: tasks.filter(t => t.type === TaskType.PERSONAL).length,
+        business: tasks.filter(t => t.type === TaskType.BUSINESS).length,
     };
     
-    return { allOpenTasks: sortedOpenTasks, stats: statistics };
-  }, [tasks]);
+    return { filteredOpenTasks: filteredTasks, stats: statistics };
+  }, [tasks, taskFilter]);
 
   return (
     <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard title="סה״כ משימות" value={stats.total} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <StatCard title="כלל המשימות" value={stats.total} onClick={() => setTaskFilter('all')} isActive={taskFilter === 'all'} />
+            <StatCard title="משימות אישיות" value={stats.personal} onClick={() => setTaskFilter(TaskType.PERSONAL)} isActive={taskFilter === TaskType.PERSONAL} />
+            <StatCard title="משימות עסקיות" value={stats.business} onClick={() => setTaskFilter(TaskType.BUSINESS)} isActive={taskFilter === TaskType.BUSINESS} />
             <StatCard title="לביצוע" value={stats.todo} />
             <StatCard title="בתהליך" value={stats.inProgress} />
             <StatCard title="הושלמו" value={stats.completed} />
@@ -75,8 +97,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
             <TaskList
-              tasks={allOpenTasks}
-              title="משימות פתוחות"
+              tasks={filteredOpenTasks}
+              title={`משימות פתוחות ${taskFilter !== 'all' ? `(${taskFilter})` : ''}`}
               onEditTask={onEditTask}
               onToggleStatus={onToggleStatus}
             />

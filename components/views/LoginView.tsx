@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { auth } from '../../services/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
+} from 'firebase/auth';
 
 const LoginView: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -8,6 +14,7 @@ const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +41,7 @@ const LoginView: React.FC = () => {
       }
     } else {
       try {
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         await signInWithEmailAndPassword(auth, email, password);
       } catch (err: any) {
         setError('אימייל או סיסמה שגויים.');
@@ -115,6 +123,22 @@ const LoginView: React.FC = () => {
               </div>
             )}
           </div>
+
+          {!isRegistering && (
+            <div className="flex items-center">
+                <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="mr-2 block text-sm text-gray-900 dark:text-gray-300">
+                    זכור אותי
+                </label>
+            </div>
+          )}
 
           <div>
             <button
