@@ -617,7 +617,7 @@ const App: React.FC = () => {
                     userEmail={user.email} 
                     onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-6">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-6 pb-24">
                     {renderView()}
                 </main>
             </div>

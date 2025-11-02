@@ -12,20 +12,20 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
     >
       <div 
-        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl m-4 max-w-xl w-full"
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-xl w-full flex flex-col max-h-full"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
           <h2 className="text-xl font-bold">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
         </div>
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto">
           {children}
         </div>
       </div>
