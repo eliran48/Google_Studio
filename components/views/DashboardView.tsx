@@ -32,7 +32,7 @@ const StatCard: React.FC<{ title: string; value: number | string; onClick?: () =
 };
 
 const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTask, onToggleStatus, onProjectSelect, setView }) => {
-  const [taskFilter, setTaskFilter] = useState<'all' | TaskType>('all');
+  const [taskFilter, setTaskFilter] = useState<'all' | TaskType | TaskStatus>('all');
   
   const { filteredOpenTasks, stats } = useMemo(() => {
     const incompleteTasks = tasks.filter(t => t.status !== TaskStatus.DONE);
@@ -68,16 +68,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
 
     const filteredTasks = sortedOpenTasks.filter(task => {
         if (taskFilter === 'all') return true;
-        return task.type === taskFilter;
+        if (taskFilter === TaskType.PERSONAL || taskFilter === TaskType.BUSINESS) {
+            return task.type === taskFilter;
+        }
+        if (taskFilter === TaskStatus.TODO || taskFilter === TaskStatus.IN_PROGRESS) {
+            return task.status === taskFilter;
+        }
+        return true;
     });
 
     const statistics = {
-        total: tasks.length,
-        completed: tasks.filter(t => t.status === TaskStatus.DONE).length,
-        inProgress: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
-        todo: tasks.filter(t => t.status === TaskStatus.TODO).length,
-        personal: tasks.filter(t => t.type === TaskType.PERSONAL).length,
-        business: tasks.filter(t => t.type === TaskType.BUSINESS).length,
+        total: incompleteTasks.length,
+        inProgress: incompleteTasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
+        todo: incompleteTasks.filter(t => t.status === TaskStatus.TODO).length,
+        personal: incompleteTasks.filter(t => t.type === TaskType.PERSONAL).length,
+        business: incompleteTasks.filter(t => t.type === TaskType.BUSINESS).length,
     };
     
     return { filteredOpenTasks: filteredTasks, stats: statistics };
@@ -85,13 +90,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
 
   return (
     <div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            <StatCard title="כלל המשימות" value={stats.total} onClick={() => setTaskFilter('all')} isActive={taskFilter === 'all'} />
-            <StatCard title="משימות אישיות" value={stats.personal} onClick={() => setTaskFilter(TaskType.PERSONAL)} isActive={taskFilter === TaskType.PERSONAL} />
-            <StatCard title="משימות עסקיות" value={stats.business} onClick={() => setTaskFilter(TaskType.BUSINESS)} isActive={taskFilter === TaskType.BUSINESS} />
-            <StatCard title="לביצוע" value={stats.todo} />
-            <StatCard title="בתהליך" value={stats.inProgress} />
-            <StatCard title="הושלמו" value={stats.completed} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <StatCard title="משימות פעילות" value={stats.total} onClick={() => setTaskFilter('all')} isActive={taskFilter === 'all'} />
+            <StatCard title="אישיות פעילות" value={stats.personal} onClick={() => setTaskFilter(TaskType.PERSONAL)} isActive={taskFilter === TaskType.PERSONAL} />
+            <StatCard title="עסקיות פעילות" value={stats.business} onClick={() => setTaskFilter(TaskType.BUSINESS)} isActive={taskFilter === TaskType.BUSINESS} />
+            <StatCard title="לביצוע" value={stats.todo} onClick={() => setTaskFilter(TaskStatus.TODO)} isActive={taskFilter === TaskStatus.TODO} />
+            <StatCard title="בתהליך" value={stats.inProgress} onClick={() => setTaskFilter(TaskStatus.IN_PROGRESS)} isActive={taskFilter === TaskStatus.IN_PROGRESS} />
         </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
