@@ -570,7 +570,15 @@ const App: React.FC = () => {
     const renderView = () => {
         switch (view) {
             case 'dashboard':
-                return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
+                return <DashboardView 
+                            tasks={tasks} 
+                            projects={projects} 
+                            onEditTask={handleEditTask} 
+                            onToggleStatus={requestToggleTaskStatus} 
+                            onProjectSelect={(id) => handleItemSelect(id, 'project')} 
+                            setView={handleSetView}
+                            userEmail={user.email} 
+                        />;
             case 'tasks':
                 return <TasksView tasks={tasks} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onAddTask={handleOpenNewTaskModal} />;
             case 'projects':
@@ -627,7 +635,15 @@ const App: React.FC = () => {
                             onBack={() => handleSetView('ideas')}
                         />;
             default:
-                return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
+                return <DashboardView 
+                            tasks={tasks} 
+                            projects={projects} 
+                            onEditTask={handleEditTask} 
+                            onToggleStatus={requestToggleTaskStatus} 
+                            onProjectSelect={(id) => handleItemSelect(id, 'project')} 
+                            setView={handleSetView} 
+                            userEmail={user.email}
+                        />;
         }
     };
 
