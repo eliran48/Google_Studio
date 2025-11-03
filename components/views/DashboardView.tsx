@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Task, TaskStatus, Project, ViewType, TaskPriority, TaskType, ProjectStatus } from '../../types';
 import TaskList from '../tasks/TaskList';
 import Card from '../ui/Card';
-import { BriefcaseIcon, ChecklistIcon, ExclamationTriangleIcon, ProjectFolderIcon, UserIcon } from '../ui/Icons';
+import { BriefcaseIcon, ChecklistIcon, ExclamationTriangleIcon, UserIcon } from '../ui/Icons';
 
 interface DashboardViewProps {
   tasks: Task[];
@@ -14,33 +14,34 @@ interface DashboardViewProps {
   userEmail: string | null;
 }
 
-const StatCard: React.FC<{ 
-    title: string; 
-    value: number | string; 
-    icon: React.ReactElement; 
-    color: string;
-    onClick?: () => void; 
-    isActive?: boolean 
-}> = ({ title, value, icon, color, onClick, isActive }) => {
-    const cardBaseClasses = "relative overflow-hidden p-4 rounded-xl shadow-md transition-all duration-300 h-full flex flex-col justify-between";
+const StatCard: React.FC<{
+    title: string;
+    value: number | string;
+    icon: React.ReactElement;
+    colors: { text: string; bg: string; border: string; };
+    onClick?: () => void;
+    isActive?: boolean
+}> = ({ title, value, icon, colors, onClick, isActive }) => {
+    const cardBaseClasses = "relative p-4 rounded-xl shadow-md transition-all duration-300 h-full flex flex-col justify-between bg-white dark:bg-gray-900 border-t-4";
     const interactiveClasses = onClick ? "cursor-pointer hover:shadow-lg hover:-translate-y-1" : "";
     const activeClasses = isActive ? "ring-2 ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800" : "";
-    const activeRingColor = isActive ? color.replace('bg-', 'ring-').replace('-500', '-400') : '';
-    
+    const activeRingColor = isActive ? colors.border.replace('border-', 'ring-') : '';
+
     return (
-        <div onClick={onClick} className={`${cardBaseClasses} ${color} ${interactiveClasses} ${activeClasses} ${activeRingColor}`}>
+        <div onClick={onClick} className={`${cardBaseClasses} ${colors.border} ${interactiveClasses} ${activeClasses} ${activeRingColor}`}>
             <div className="flex justify-between items-start">
                 <div className="flex-1">
-                    <p className="text-xs md:text-sm font-medium opacity-80">{title}</p>
-                    <p className="text-2xl md:text-3xl font-bold mt-1">{value}</p>
+                    <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+                    <p className={`text-2xl md:text-3xl font-bold mt-1 ${colors.text}`}>{value}</p>
                 </div>
-                <div className="p-2 md:p-3 bg-black bg-opacity-10 rounded-lg">
-                    {React.cloneElement(icon, { className: 'w-5 h-5 md:w-6 md:h-6' })}
+                <div className={`p-2 md:p-3 rounded-lg ${colors.bg}`}>
+                    {React.cloneElement(icon, { className: `w-5 h-5 md:w-6 md:h-6 ${colors.text}` })}
                 </div>
             </div>
         </div>
     );
 };
+
 
 const UrgentTaskItem: React.FC<{ task: Task; onEditTask: (task: Task) => void; }> = ({ task, onEditTask }) => {
     const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
@@ -88,7 +89,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
     const filteredTasks = sortedOpenTasks.filter(task => {
         if (taskFilter === 'all') return true;
         if (taskFilter === TaskType.PERSONAL || taskFilter === TaskType.BUSINESS) return task.type === taskFilter;
-        if (taskFilter === TaskStatus.TODO || taskFilter === TaskStatus.IN_PROGRESS) return task.status === taskFilter;
+        if (taskFilter === TaskStatus.IN_PROGRESS) return task.status === taskFilter;
         return true;
     });
     
@@ -100,7 +101,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
     const statistics = {
         total: incompleteTasks.length,
         inProgress: incompleteTasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
-        todo: incompleteTasks.filter(t => t.status === TaskStatus.TODO).length,
         personal: incompleteTasks.filter(t => t.type === TaskType.PERSONAL).length,
         business: incompleteTasks.filter(t => t.type === TaskType.BUSINESS).length,
         urgent: urgentTasks.length,
@@ -125,12 +125,28 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
     return { totalTasks, completedTasks, progress };
   };
 
-  const statCardsData = [
-    { key: 'all', title: 'משימות פעילות', value: stats.total, icon: <ChecklistIcon />, color: 'bg-blue-500 text-white' },
-    { key: TaskType.PERSONAL, title: 'אישיות פעילות', value: stats.personal, icon: <UserIcon />, color: 'bg-green-500 text-white' },
-    { key: TaskType.BUSINESS, title: 'עסקיות פעילות', value: stats.business, icon: <BriefcaseIcon />, color: 'bg-teal-500 text-white' },
-    { key: TaskStatus.IN_PROGRESS, title: 'בתהליך', value: stats.inProgress, icon: <ChecklistIcon />, color: 'bg-yellow-500 text-white' },
-  ];
+    const statCardsData = [
+        { key: 'all', title: 'משימות פעילות', value: stats.total, icon: <ChecklistIcon />, colors: {
+            text: 'text-blue-600 dark:text-blue-400',
+            bg: 'bg-blue-100 dark:bg-blue-900/50',
+            border: 'border-blue-500'
+        } },
+        { key: TaskType.PERSONAL, title: 'אישיות פעילות', value: stats.personal, icon: <UserIcon />, colors: {
+            text: 'text-green-600 dark:text-green-400',
+            bg: 'bg-green-100 dark:bg-green-900/50',
+            border: 'border-green-500'
+        } },
+        { key: TaskType.BUSINESS, title: 'עסקיות פעילות', value: stats.business, icon: <BriefcaseIcon />, colors: {
+            text: 'text-teal-600 dark:text-teal-400',
+            bg: 'bg-teal-100 dark:bg-teal-900/50',
+            border: 'border-teal-500'
+        } },
+        { key: TaskStatus.IN_PROGRESS, title: 'בתהליך', value: stats.inProgress, icon: <ChecklistIcon />, colors: {
+            text: 'text-yellow-600 dark:text-yellow-400',
+            bg: 'bg-yellow-100 dark:bg-yellow-900/50',
+            border: 'border-yellow-500'
+        } },
+    ];
 
   return (
     <div className="space-y-6">
@@ -151,7 +167,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
                         title={card.title} 
                         value={card.value}
                         icon={card.icon}
-                        color={card.color}
+                        colors={card.colors}
                         onClick={() => setTaskFilter(card.key as any)} 
                         isActive={taskFilter === card.key} 
                     />
