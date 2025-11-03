@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
@@ -13,6 +13,11 @@ interface TaskListProps {
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleStatus }) => {
   const [showCompleted, setShowCompleted] = useState(false);
+  const [orderedTasks, setOrderedTasks] = useState<Task[]>([]);
+  
+  const draggedTaskRef = useRef<Task | null>(null);
+  const dragOverTaskRef = useRef<Task | null>(null);
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
 
   const hasCompletedTasks = useMemo(() => tasks.some(t => t.status === TaskStatus.DONE), [tasks]);
 
@@ -24,6 +29,55 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
     // Otherwise, show only non-completed tasks.
     return tasks.filter(task => task.status !== TaskStatus.DONE);
   }, [tasks, showCompleted]);
+
+  // Sync state when props change (e.g., when parent filter changes)
+  useEffect(() => {
+    setOrderedTasks(filteredTasks);
+  }, [filteredTasks]);
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, task: Task) => {
+    draggedTaskRef.current = task;
+    setDraggingTaskId(task.id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', task.id); // Necessary for Firefox
+  };
+
+  const handleDragEnter = (task: Task) => {
+    dragOverTaskRef.current = task;
+  };
+  
+  const handleDragEnd = () => {
+    draggedTaskRef.current = null;
+    dragOverTaskRef.current = null;
+    setDraggingTaskId(null);
+  };
+  
+  const handleDrop = () => {
+    const draggedTask = draggedTaskRef.current;
+    const dragOverTask = dragOverTaskRef.current;
+
+    // Ensure we have a task being dragged, a target to drop on, and they are not the same task
+    if (!draggedTask || !dragOverTask || draggedTask.id === dragOverTask.id) {
+        handleDragEnd();
+        return;
+    }
+
+    const fromIndex = orderedTasks.findIndex(t => t.id === draggedTask.id);
+    const toIndex = orderedTasks.findIndex(t => t.id === dragOverTask.id);
+    
+    if (fromIndex === -1 || toIndex === -1) {
+        handleDragEnd();
+        return;
+    }
+
+    // Reorder the array
+    const newOrderedTasks = [...orderedTasks];
+    const [removed] = newOrderedTasks.splice(fromIndex, 1);
+    newOrderedTasks.splice(toIndex, 0, removed);
+    
+    setOrderedTasks(newOrderedTasks);
+    handleDragEnd(); // Cleanup after drop
+  };
 
 
   const formatDate = (dateString?: string) => {
@@ -56,22 +110,30 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
           </label>
         )}
       </div>
-      {filteredTasks.length === 0 ? (
+      {orderedTasks.length === 0 ? (
         <p className="text-center text-gray-500 dark:text-gray-400 py-4">
             {hasCompletedTasks && !showCompleted ? 'כל המשימות הפתוחות הושלמו! סמן את התיבה כדי להציג את כולן.' : 'אין משימות להצגה.'}
         </p>
       ) : (
-        <div className="space-y-4">
-          {filteredTasks.map(task => {
+        <div 
+            className="space-y-4"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+        >
+          {orderedTasks.map(task => {
             const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
             const hasSubTasks = task.subTasks && task.subTasks.length > 0;
             const completedSubTasks = hasSubTasks ? task.subTasks!.filter(st => st.isCompleted).length : 0;
+            const isDragging = draggingTaskId === task.id;
             
             return (
               <div 
                 key={task.id} 
-                onClick={() => onEditTask(task)}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-shadow hover:shadow-md cursor-pointer"
+                draggable
+                onDragStart={(e) => handleDragStart(e, task)}
+                onDragEnter={() => handleDragEnter(task)}
+                onDragEnd={handleDragEnd}
+                className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-all hover:shadow-md cursor-move ${isDragging ? 'opacity-50 shadow-2xl scale-105' : 'opacity-100'}`}
               >
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div onClick={(e) => e.stopPropagation()}>

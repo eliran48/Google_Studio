@@ -17,6 +17,7 @@ interface ProjectDetailViewProps {
   onSaveMilestone: (projectId: string, milestone: Partial<Omit<ProjectMilestone, 'id' | 'date'>>) => void;
   onDeleteMilestone: (projectId: string, milestoneId: string) => void;
   onAddTask: (defaults: Partial<Task>) => void;
+  onBack: () => void;
 }
 
 const InfoItem: React.FC<{label: string; value?: string | number | null}> = ({label, value}) => (
@@ -28,7 +29,7 @@ const InfoItem: React.FC<{label: string; value?: string | number | null}> = ({la
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ 
     project, tasks, customers, onEditTask, onToggleStatus, onEditProject, onDeleteProject,
-    onSaveLink, onDeleteLink, onSaveMilestone, onDeleteMilestone, onAddTask
+    onSaveLink, onDeleteLink, onSaveMilestone, onDeleteMilestone, onAddTask, onBack
 }) => {
   const projectCustomers = customers.filter(c => project.customerIds?.includes(c.id));
   const [newMilestoneDesc, setNewMilestoneDesc] = useState('');
@@ -67,6 +68,16 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
   return (
     <div className="space-y-6">
+        <button 
+            onClick={onBack} 
+            className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 mb-4"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            </svg>
+            <span>חזרה לרשימת הפרויקטים</span>
+        </button>
+
       <Card>
         <div className="flex justify-between items-start">
             <div className="flex-grow">

@@ -5,6 +5,7 @@ import { LightBulbIcon, PlusIcon, EditIcon, TrashIcon } from '../ui/Icons';
 
 interface IdeasViewProps {
   ideas: Idea[];
+  onIdeaSelect: (ideaId: string) => void;
   onConvertToProject: (idea: Idea) => void;
   onAddIdea: () => void;
   onEditIdea: (idea: Idea) => void;
@@ -33,7 +34,7 @@ const InfoBadge: React.FC<{label: string; value: IdeaImpact | IdeaEffort; type: 
 );
 
 
-const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onConvertToProject, onAddIdea, onEditIdea, onDeleteIdea, onAddTask }) => {
+const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onIdeaSelect, onConvertToProject, onAddIdea, onEditIdea, onDeleteIdea, onAddTask }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -61,11 +62,10 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onConvertToProject, onAddI
               key={idea.id} 
               className="group hover:shadow-xl hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col justify-between relative"
             >
-              <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <button onClick={(e) => { e.stopPropagation(); onEditIdea(idea); }} className="p-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600" aria-label="ערוך רעיון"><EditIcon className="w-4 h-4" /></button>
-                <button onClick={(e) => { e.stopPropagation(); onDeleteIdea(idea); }} className="p-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-300 hover:bg-red-200 dark:hover:bg-red-800 hover:text-red-600" aria-label="מחק רעיון"><TrashIcon className="w-4 h-4" /></button>
-              </div>
-              <div className="flex-grow">
+              <div 
+                onClick={() => onIdeaSelect(idea.id)} 
+                className="flex-grow cursor-pointer"
+              >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
                       <LightBulbIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
@@ -100,6 +100,10 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onConvertToProject, onAddI
                             הוסף משימה
                         </button>
                     </div>
+              </div>
+               <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <button onClick={(e) => { e.stopPropagation(); onEditIdea(idea); }} className="p-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600" aria-label="ערוך רעיון"><EditIcon className="w-4 h-4" /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDeleteIdea(idea); }} className="p-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-300 hover:bg-red-200 dark:hover:bg-red-800 hover:text-red-600" aria-label="מחק רעיון"><TrashIcon className="w-4 h-4" /></button>
               </div>
             </Card>
           ))}

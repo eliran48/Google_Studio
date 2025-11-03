@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Task, TaskStatus, TaskPriority } from '../../types';
 import Badge from '../ui/Badge';
 import { EditIcon, PlusIcon } from '../ui/Icons';
 
 // A smaller Task Card for the Kanban view
-const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; onToggleStatus: (taskId: string) => void; }> = ({ task, onEditTask, onToggleStatus }) => {
+const TaskKanbanCard: React.FC<{ 
+    task: Task; 
+    onEditTask: (task: Task) => void; 
+    onToggleStatus: (taskId: string) => void; 
+    onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
+    onDragEnter: () => void;
+    onDragEnd: () => void;
+    isDragging: boolean;
+}> = ({ task, onEditTask, onToggleStatus, onDragStart, onDragEnter, onDragEnd, isDragging }) => {
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'N/A';
         return new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(dateString));
@@ -13,7 +21,13 @@ const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; o
     const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
 
     return (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
+        <div 
+            draggable
+            onDragStart={onDragStart}
+            onDragEnter={onDragEnter}
+            onDragEnd={onDragEnd}
+            className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-3 cursor-move transition-opacity ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+        >
             <div className="flex justify-between items-start">
                 <p className={`font-bold break-words ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
                     {task.title}
@@ -49,13 +63,38 @@ const TaskKanbanCard: React.FC<{ task: Task; onEditTask: (task: Task) => void; o
 };
 
 // The Column component
-const TaskColumn: React.FC<{ title: string; tasks: Task[]; onEditTask: (task: Task) => void; onToggleStatus: (taskId: string) => void; className: string; }> = ({ title, tasks, onEditTask, onToggleStatus, className }) => (
-    <div className="bg-gray-100 dark:bg-gray-900/50 rounded-xl p-4 flex flex-col h-[calc(100vh-12rem)]">
+const TaskColumn: React.FC<{ 
+    title: string; 
+    tasks: Task[]; 
+    onEditTask: (task: Task) => void; 
+    onToggleStatus: (taskId: string) => void; 
+    className: string; 
+    onDragStart: (e: React.DragEvent<HTMLDivElement>, task: Task) => void;
+    onDragEnter: (task: Task) => void;
+    onDrop: () => void;
+    onDragEnd: () => void;
+    draggingTaskId: string | null;
+}> = ({ title, tasks, onEditTask, onToggleStatus, className, onDragStart, onDragEnter, onDrop, onDragEnd, draggingTaskId }) => (
+    <div 
+        className="bg-gray-100 dark:bg-gray-900/50 rounded-xl p-4 flex flex-col h-[calc(100vh-12rem)]"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDrop}
+        onDragEnd={onDragEnd}
+    >
         <h3 className={`text-lg font-bold mb-4 px-2 ${className}`}>{title} ({tasks.length})</h3>
         <div className="space-y-4 overflow-y-auto pr-1 pb-2 flex-1">
             {tasks.length > 0 ? (
                 tasks.map(task => (
-                    <TaskKanbanCard key={task.id} task={task} onEditTask={onEditTask} onToggleStatus={onToggleStatus} />
+                    <TaskKanbanCard 
+                        key={task.id} 
+                        task={task} 
+                        onEditTask={onEditTask} 
+                        onToggleStatus={onToggleStatus} 
+                        onDragStart={(e) => onDragStart(e, task)}
+                        onDragEnter={() => onDragEnter(task)}
+                        onDragEnd={onDragEnd}
+                        isDragging={draggingTaskId === task.id}
+                    />
                 ))
             ) : (
                 <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg h-24 flex items-center justify-center">
@@ -76,32 +115,90 @@ interface TasksViewProps {
 const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus, onAddTask }) => {
     const [showCompleted, setShowCompleted] = useState(true);
 
-    const priorityOrder: Record<TaskPriority, number> = {
-        [TaskPriority.URGENT]: 4,
-        [TaskPriority.HIGH]: 3,
-        [TaskPriority.NORMAL]: 2,
-        [TaskPriority.LOW]: 1,
-    };
+    const [todoTasks, setTodoTasks] = useState<Task[]>([]);
+    const [inProgressTasks, setInProgressTasks] = useState<Task[]>([]);
+    const [doneTasks, setDoneTasks] = useState<Task[]>([]);
     
-    const sortedTasks = [...tasks].sort((a, b) => {
-      const priorityA = priorityOrder[a.priority];
-      const priorityB = priorityOrder[b.priority];
-      if (priorityB !== priorityA) {
-          return priorityB - priorityA; // Higher priority first
-      }
+    const draggedTaskRef = useRef<Task | null>(null);
+    const dragOverTaskRef = useRef<Task | null>(null);
+    const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
 
-      // Sort by due date (earliest first, no due date last)
-      if (a.dueDate && b.dueDate) {
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-      if (a.dueDate) return -1;
-      if (b.dueDate) return 1;
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
+    useEffect(() => {
+        const priorityOrder: Record<TaskPriority, number> = {
+            [TaskPriority.URGENT]: 4,
+            [TaskPriority.HIGH]: 3,
+            [TaskPriority.NORMAL]: 2,
+            [TaskPriority.LOW]: 1,
+        };
+        
+        const sortedTasks = [...tasks].sort((a, b) => {
+          const priorityA = priorityOrder[a.priority];
+          const priorityB = priorityOrder[b.priority];
+          if (priorityB !== priorityA) {
+              return priorityB - priorityA;
+          }
+          if (a.dueDate && b.dueDate) {
+              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          }
+          if (a.dueDate) return -1;
+          if (b.dueDate) return 1;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
 
-    const todoTasks = sortedTasks.filter(t => t.status === TaskStatus.TODO);
-    const inProgressTasks = sortedTasks.filter(t => t.status === TaskStatus.IN_PROGRESS);
-    const doneTasks = sortedTasks.filter(t => t.status === TaskStatus.DONE);
+        setTodoTasks(sortedTasks.filter(t => t.status === TaskStatus.TODO));
+        setInProgressTasks(sortedTasks.filter(t => t.status === TaskStatus.IN_PROGRESS));
+        setDoneTasks(sortedTasks.filter(t => t.status === TaskStatus.DONE));
+    }, [tasks]);
+
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, task: Task) => {
+        draggedTaskRef.current = task;
+        setDraggingTaskId(task.id);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', task.id);
+    };
+
+    const handleDragEnter = (task: Task) => {
+        dragOverTaskRef.current = task;
+    };
+
+    const handleDrop = (targetStatus: TaskStatus) => {
+        const draggedTask = draggedTaskRef.current;
+        const dragOverTask = dragOverTaskRef.current;
+
+        if (!draggedTask || !dragOverTask || draggedTask.id === dragOverTask.id || draggedTask.status !== targetStatus || dragOverTask.status !== targetStatus) {
+            return;
+        }
+
+        let list: Task[];
+        let setList: (tasks: Task[]) => void;
+
+        if (targetStatus === TaskStatus.TODO) {
+            list = [...todoTasks];
+            setList = setTodoTasks;
+        } else if (targetStatus === TaskStatus.IN_PROGRESS) {
+            list = [...inProgressTasks];
+            setList = setInProgressTasks;
+        } else {
+            list = [...doneTasks];
+            setList = setDoneTasks;
+        }
+
+        const fromIndex = list.findIndex(t => t.id === draggedTask.id);
+        const toIndex = list.findIndex(t => t.id === dragOverTask.id);
+
+        if (fromIndex === -1 || toIndex === -1) return;
+
+        const [removed] = list.splice(fromIndex, 1);
+        list.splice(toIndex, 0, removed);
+        
+        setList(list);
+    };
+
+    const handleDragEnd = () => {
+        draggedTaskRef.current = null;
+        dragOverTaskRef.current = null;
+        setDraggingTaskId(null);
+    };
 
     return (
         <div>
@@ -127,10 +224,43 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus
                 </div>
             </div>
             <div className={`grid grid-cols-1 ${showCompleted ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
-                <TaskColumn title="לביצוע" tasks={todoTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-red-500" />
-                <TaskColumn title="בתהליך" tasks={inProgressTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-yellow-500" />
+                <TaskColumn 
+                    title="לביצוע" 
+                    tasks={todoTasks} 
+                    onEditTask={onEditTask} 
+                    onToggleStatus={onToggleStatus} 
+                    className="text-red-500" 
+                    onDragStart={handleDragStart}
+                    onDragEnter={handleDragEnter}
+                    onDrop={() => handleDrop(TaskStatus.TODO)}
+                    onDragEnd={handleDragEnd}
+                    draggingTaskId={draggingTaskId}
+                />
+                <TaskColumn 
+                    title="בתהליך" 
+                    tasks={inProgressTasks} 
+                    onEditTask={onEditTask} 
+                    onToggleStatus={onToggleStatus} 
+                    className="text-yellow-500" 
+                    onDragStart={handleDragStart}
+                    onDragEnter={handleDragEnter}
+                    onDrop={() => handleDrop(TaskStatus.IN_PROGRESS)}
+                    onDragEnd={handleDragEnd}
+                    draggingTaskId={draggingTaskId}
+                />
                 {showCompleted && (
-                    <TaskColumn title="הושלם" tasks={doneTasks} onEditTask={onEditTask} onToggleStatus={onToggleStatus} className="text-green-500" />
+                    <TaskColumn 
+                        title="הושלם" 
+                        tasks={doneTasks} 
+                        onEditTask={onEditTask} 
+                        onToggleStatus={onToggleStatus} 
+                        className="text-green-500" 
+                        onDragStart={handleDragStart}
+                        onDragEnter={handleDragEnter}
+                        onDrop={() => handleDrop(TaskStatus.DONE)}
+                        onDragEnd={handleDragEnd}
+                        draggingTaskId={draggingTaskId}
+                    />
                 )}
             </div>
         </div>

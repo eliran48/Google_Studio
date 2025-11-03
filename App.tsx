@@ -14,6 +14,7 @@ import IdeasView from './components/views/IdeasView';
 import ProjectDetailView from './components/views/ProjectDetailView';
 import CustomerDetailView from './components/views/CustomerDetailView';
 import TasksView from './components/views/TasksView';
+import IdeaDetailView from './components/views/IdeaDetailView';
 import TaskForm from './components/tasks/TaskForm';
 import ProjectForm from './components/projects/ProjectForm';
 import IdeaForm from './components/ideas/IdeaForm';
@@ -102,9 +103,11 @@ const App: React.FC = () => {
         setSelectedItemId(null);
     }, []);
 
-    const handleItemSelect = useCallback((id: string, type: 'project' | 'customer') => {
+    const handleItemSelect = useCallback((id: string, type: 'project' | 'customer' | 'idea') => {
         setSelectedItemId(id);
-        setView(type === 'project' ? 'project-detail' : 'customer-detail');
+        if (type === 'project') setView('project-detail');
+        if (type === 'customer') setView('customer-detail');
+        if (type === 'idea') setView('idea-detail');
     }, []);
     
     const handleLogout = async () => {
@@ -489,7 +492,11 @@ const App: React.FC = () => {
                 }
                 return t;
             }));
-            handleSetView('projects');
+            
+            if (view === 'idea-detail' && selectedItemId === idea.id) {
+                handleSetView('projects');
+            }
+
         } catch(error) {
             console.error("Error converting idea to project:", error);
         }
@@ -513,6 +520,9 @@ const App: React.FC = () => {
 
             setIdeas(prev => prev.filter(i => i.id !== ideaId));
             setTasks(prev => prev.map(t => (t.ideaId === ideaId ? { ...t, ideaId: undefined } : t)));
+             if(view === 'idea-detail' && selectedItemId === ideaId) {
+                handleSetView('ideas');
+            }
         } catch (error) {
             console.error("Error deleting idea:", error);
         }
@@ -568,7 +578,7 @@ const App: React.FC = () => {
             case 'customers':
                 return <CustomersView customers={customers} tasks={tasks} onCustomerSelect={(id) => handleItemSelect(id, 'customer')} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddCustomer={handleOpenNewCustomerModal} onAddTask={handleOpenNewTaskModal} onAddProject={handleOpenNewProjectModal} />;
             case 'ideas':
-                return <IdeasView ideas={ideas} onConvertToProject={handleConvertIdeaToProject} onAddIdea={handleOpenNewIdeaModal} onEditIdea={handleEditIdea} onDeleteIdea={requestDeleteIdea} onAddTask={handleOpenNewTaskModal} />;
+                return <IdeasView ideas={ideas} onIdeaSelect={(id) => handleItemSelect(id, 'idea')} onConvertToProject={handleConvertIdeaToProject} onAddIdea={handleOpenNewIdeaModal} onEditIdea={handleEditIdea} onDeleteIdea={requestDeleteIdea} onAddTask={handleOpenNewTaskModal} />;
             case 'project-detail':
                 const project = projects.find(p => p.id === selectedItemId);
                 if (!project) return <div>Project not found</div>;
@@ -585,11 +595,37 @@ const App: React.FC = () => {
                             onSaveMilestone={handleSaveProjectMilestone}
                             onDeleteMilestone={handleDeleteProjectMilestone}
                             onAddTask={handleOpenNewTaskModal}
+                            onBack={() => handleSetView('projects')}
                         />;
             case 'customer-detail':
                  const customer = customers.find(c => c.id === selectedItemId);
                  if (!customer) return <div>Customer not found</div>
-                 return <CustomerDetailView customer={customer} tasks={tasks.filter(t => t.customerId === selectedItemId)} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onEditCustomer={handleEditCustomer} onDeleteCustomer={requestDeleteCustomer} onAddTask={handleOpenNewTaskModal} onSaveUpdate={handleSaveCustomerUpdate} />;
+                 return <CustomerDetailView 
+                            customer={customer} 
+                            tasks={tasks.filter(t => t.customerId === selectedItemId)} 
+                            projects={projects} 
+                            onEditTask={handleEditTask} 
+                            onToggleStatus={requestToggleTaskStatus} 
+                            onEditCustomer={handleEditCustomer} 
+                            onDeleteCustomer={requestDeleteCustomer} 
+                            onAddTask={handleOpenNewTaskModal} 
+                            onSaveUpdate={handleSaveCustomerUpdate}
+                            onBack={() => handleSetView('customers')}
+                        />;
+            case 'idea-detail':
+                const idea = ideas.find(i => i.id === selectedItemId);
+                if (!idea) return <div>Idea not found</div>;
+                return <IdeaDetailView
+                            idea={idea}
+                            tasks={tasks.filter(t => t.ideaId === selectedItemId)}
+                            onEditTask={handleEditTask}
+                            onToggleStatus={requestToggleTaskStatus}
+                            onAddTask={handleOpenNewTaskModal}
+                            onEditIdea={handleEditIdea}
+                            onDeleteIdea={requestDeleteIdea}
+                            onConvertToProject={handleConvertIdeaToProject}
+                            onBack={() => handleSetView('ideas')}
+                        />;
             default:
                 return <DashboardView tasks={tasks} projects={projects} onEditTask={handleEditTask} onToggleStatus={requestToggleTaskStatus} onProjectSelect={(id) => handleItemSelect(id, 'project')} setView={handleSetView} />;
         }

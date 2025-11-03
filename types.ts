@@ -111,4 +111,4 @@ export interface Idea {
   effort: IdeaEffort;
 }
 
-export type ViewType = 'dashboard' | 'projects' | 'customers' | 'ideas' | 'project-detail' | 'customer-detail' | 'tasks';
+export type ViewType = 'dashboard' | 'projects' | 'customers' | 'ideas' | 'project-detail' | 'customer-detail' | 'tasks' | 'idea-detail';
