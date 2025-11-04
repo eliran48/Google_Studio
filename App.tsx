@@ -143,8 +143,13 @@ const App: React.FC = () => {
             await updateDoc(taskDocRef, taskData);
             setTasks(tasks.map(t => t.id === taskData.id ? { ...t, ...taskData } as Task : t));
         } else {
-            const docRef = await addDoc(collection(db, collectionPath), { ...taskData, createdAt: new Date().toISOString() });
-            setTasks([...tasks, { ...taskData, id: docRef.id, createdAt: new Date().toISOString() } as Task]);
+            const { id, ...dataToSave } = taskData;
+            const newTaskData = { 
+                ...dataToSave, 
+                createdAt: new Date().toISOString() 
+            };
+            const docRef = await addDoc(collection(db, collectionPath), newTaskData);
+            setTasks([...tasks, { ...newTaskData, id: docRef.id } as Task]);
         }
     };
     

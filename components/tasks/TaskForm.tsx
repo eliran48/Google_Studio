@@ -12,6 +12,8 @@ interface TaskFormProps {
   customers: Customer[];
 }
 
+const generateLocalId = () => `subtask_${Math.random().toString(36).substring(2, 9)}`;
+
 const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, projects, customers }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -64,7 +66,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
   const handleAddSubTask = () => {
       if(newSubTaskTitle.trim()) {
           const newSubTask: SubTask = {
-              id: Date.now().toString(),
+              id: generateLocalId(),
               title: newSubTaskTitle.trim(),
               isCompleted: false,
           };
