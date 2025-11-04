@@ -30,35 +30,32 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
   useEffect(() => {
     if (isOpen) {
       setIsSaving(false);
-      setTitle(task?.title || '');
-      setDescription(task?.description || '');
-      setType(task?.type || TaskType.PERSONAL);
-      setCustomerId(task?.customerId);
-      setProjectId(task?.projectId);
+      const sourceTask = task || {};
+
+      setTitle(sourceTask.title || '');
+      setDescription(sourceTask.description || '');
+      setType(sourceTask.type || TaskType.PERSONAL);
+      setCustomerId(sourceTask.customerId);
+      setProjectId(sourceTask.projectId);
       
-      const getSafeDateString = (date: any): string => {
-        if (!date) return '';
-        if (typeof date === 'string') {
-            // Handle ISO string from DB or yyyy-mm-dd from input
-            return date.includes('T') ? date.split('T')[0] : date;
-        }
-        // Handle Firebase Timestamp
-        if (date.toDate && typeof date.toDate === 'function') {
-            return date.toDate().toISOString().split('T')[0];
-        }
-        // Handle JS Date object or other formats
-        try {
-            return new Date(date).toISOString().split('T')[0];
-        } catch (e) {
-            console.error("Could not parse date:", date);
-            return '';
-        }
-      };
-      
-      setDueDate(getSafeDateString(task?.dueDate));
-      setPriority(task?.priority || TaskPriority.NORMAL);
-      setStatus(task?.status || TaskStatus.TODO);
-      setSubTasks(task?.subTasks || []);
+      let initialDueDate = '';
+      if (sourceTask.dueDate) {
+          try {
+              // This handles ISO strings from DB or date objects
+              const date = new Date(sourceTask.dueDate);
+              // Ensure date is valid before converting
+              if (!isNaN(date.getTime())) {
+                  initialDueDate = date.toISOString().split('T')[0];
+              }
+          } catch (e) {
+              console.error("Could not parse date:", sourceTask.dueDate);
+          }
+      }
+      setDueDate(initialDueDate);
+
+      setPriority(sourceTask.priority || TaskPriority.NORMAL);
+      setStatus(sourceTask.status || TaskStatus.TODO);
+      setSubTasks(sourceTask.subTasks || []);
       setNewSubTaskTitle('');
     }
   }, [task, isOpen]);
@@ -70,7 +67,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
               title: newSubTaskTitle.trim(),
               isCompleted: false,
           };
-          setSubTasks([...subTasks, newSubTask]);
+          setSubTasks(prev => [...prev, newSubTask]);
           setNewSubTaskTitle('');
       }
   };
@@ -195,7 +192,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
                                 onChange={() => handleToggleSubTask(st.id)}
                                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                             />
-                            <span className={st.isCompleted ? 'line-through text-gray-500' : 'text-gray-800 dark:text-gray-200'}>{st.title}</span>
+                            <span className={`${st.isCompleted ? 'line-through text-gray-500' : 'text-gray-800 dark:text-gray-200'} dark:text-gray-100`}>{st.title}</span>
                         </div>
                         <button type="button" onClick={() => handleDeleteSubTask(st.id)} className="text-gray-400 hover:text-red-500">
                             <TrashIcon className="w-4 h-4"/>
