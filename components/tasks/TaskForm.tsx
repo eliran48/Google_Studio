@@ -109,7 +109,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
     }
   };
 
-  const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500";
+  const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={task?.id ? 'עריכת משימה' : 'משימה חדשה'}>
@@ -193,7 +193,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
                                 onChange={() => handleToggleSubTask(st.id)}
                                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                             />
-                            <span className={st.isCompleted ? 'line-through text-gray-500' : ''}>{st.title}</span>
+                            <span className={st.isCompleted ? 'line-through text-gray-500' : 'text-gray-800 dark:text-gray-200'}>{st.title}</span>
                         </div>
                         <button type="button" onClick={() => handleDeleteSubTask(st.id)} className="text-gray-400 hover:text-red-500">
                             <TrashIcon className="w-4 h-4"/>

@@ -58,7 +58,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
     }
   };
   
-  const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500";
+  const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={idea ? 'עריכת רעיון' : 'רעיון חדש'}>

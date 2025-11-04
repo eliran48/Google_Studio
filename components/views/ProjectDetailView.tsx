@@ -121,7 +121,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             <Card>
                 <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">אבני דרך</h3>
                 <form onSubmit={handleMilestoneSubmit} className="flex gap-2 mb-4">
-                    <input type="text" value={newMilestoneDesc} onChange={(e) => setNewMilestoneDesc(e.target.value)} placeholder="הוסף אבן דרך..." className="flex-grow p-2 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600" />
+                    <input type="text" value={newMilestoneDesc} onChange={(e) => setNewMilestoneDesc(e.target.value)} placeholder="הוסף אבן דרך..." className="flex-grow p-2 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100" />
                     <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400" disabled={!newMilestoneDesc.trim()}>הוסף</button>
                 </form>
                 <div className="space-y-3 max-h-40 overflow-y-auto">
@@ -155,8 +155,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 </div>
                 {showAddLinkForm && (
                     <form onSubmit={handleLinkSubmit} className="space-y-2 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <input type="text" value={newLink.title} onChange={(e) => setNewLink(p => ({...p, title: e.target.value}))} placeholder="כותרת הקישור" className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600" required />
-                        <input type="url" value={newLink.url} onChange={(e) => setNewLink(p => ({...p, url: e.target.value}))} placeholder="https://example.com" className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600" required />
+                        <input type="text" value={newLink.title} onChange={(e) => setNewLink(p => ({...p, title: e.target.value}))} placeholder="כותרת הקישור" className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required />
+                        <input type="url" value={newLink.url} onChange={(e) => setNewLink(p => ({...p, url: e.target.value}))} placeholder="https://example.com" className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required />
                         <div className="flex justify-end gap-2">
                             <button type="button" onClick={() => setShowAddLinkForm(false)} className="px-3 py-1 text-sm rounded-md">ביטול</button>
                             <button type="submit" className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">שמור</button>
