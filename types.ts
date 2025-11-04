@@ -42,6 +42,32 @@ export enum IdeaEffort {
   LOW = 'נמוך',
 }
 
+export enum EnrichmentType {
+  BOOK = 'ספר',
+  PODCAST = 'פודקאסט',
+  VIDEO = 'וידאו',
+  ARTICLE = 'מאמר',
+  COURSE = 'קורס',
+  OTHER = 'אחר',
+}
+
+export enum EnrichmentStatus {
+  BACKLOG = 'לצריכה',
+  IN_PROGRESS = 'בתהליך',
+  COMPLETED = 'נצרך',
+}
+
+export interface EnrichmentItem {
+  id: string;
+  title: string;
+  description?: string;
+  url?: string;
+  type: EnrichmentType;
+  status: EnrichmentStatus;
+  tags?: string[];
+  createdAt: string;
+}
+
 export interface Update {
   date: string;
   text: string;
@@ -66,6 +92,9 @@ export interface Task {
   status: TaskStatus;
   createdAt: string;
   subTasks?: SubTask[];
+  completedAt?: string;
+  isDaily?: boolean;
+  dailyOrder?: number;
 }
 
 export interface Customer {
@@ -111,4 +140,4 @@ export interface Idea {
   effort: IdeaEffort;
 }
 
-export type ViewType = 'dashboard' | 'projects' | 'customers' | 'ideas' | 'project-detail' | 'customer-detail' | 'tasks' | 'idea-detail';
+export type ViewType = 'dashboard' | 'projects' | 'customers' | 'ideas' | 'project-detail' | 'customer-detail' | 'tasks' | 'idea-detail' | 'enrichment';

@@ -16,7 +16,6 @@ interface ProjectDetailViewProps {
   onDeleteLink: (projectId: string, linkId: string) => void;
   onSaveMilestone: (projectId: string, milestone: Partial<Omit<ProjectMilestone, 'id' | 'date'>>) => void;
   onDeleteMilestone: (projectId: string, milestoneId: string) => void;
-  onAddTask: (defaults: Partial<Task>) => void;
   onBack: () => void;
 }
 
@@ -29,7 +28,7 @@ const InfoItem: React.FC<{label: string; value?: string | number | null}> = ({la
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ 
     project, tasks, customers, onEditTask, onToggleStatus, onEditProject, onDeleteProject,
-    onSaveLink, onDeleteLink, onSaveMilestone, onDeleteMilestone, onAddTask, onBack
+    onSaveLink, onDeleteLink, onSaveMilestone, onDeleteMilestone, onBack
 }) => {
   const projectCustomers = customers.filter(c => project.customerIds?.includes(c.id));
   const [newMilestoneDesc, setNewMilestoneDesc] = useState('');
@@ -38,7 +37,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return undefined;
-    return new Intl.DateTimeFormat('he-IL', {day: '2-digit', month: '2-digit', year: 'numeric'}).format(new Date(dateString));
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        return 'תאריך לא חוקי';
+    }
+    return new Intl.DateTimeFormat('he-IL', {day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC'}).format(date);
   };
   
   const formatCurrency = (amount?: number) => {
@@ -63,7 +66,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
       }
   };
   
-  const sortedMilestones = (project.milestones || []).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedMilestones = (project.milestones || []).slice().sort((a, b) => {
+      const timeA = new Date(a.date).getTime();
+      const timeB = new Date(b.date).getTime();
+      if (isNaN(timeA)) return 1;
+      if (isNaN(timeB)) return -1;
+      return timeB - timeA;
+  });
 
 
   return (
@@ -85,9 +94,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 <p className="mt-2 text-gray-600 dark:text-gray-300 max-w-prose">{project.description}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-                 <button onClick={() => onAddTask({ projectId: project.id, type: TaskType.BUSINESS })} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="הוסף משימה לפרויקט">
-                    <PlusIcon className="w-5 h-5" />
-                </button>
                 <button onClick={() => onEditProject(project)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
                     <EditIcon className="w-5 h-5" />
                 </button>
@@ -119,17 +125,24 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400" disabled={!newMilestoneDesc.trim()}>הוסף</button>
                 </form>
                 <div className="space-y-3 max-h-40 overflow-y-auto">
-                    {sortedMilestones.map(m => (
-                        <div key={m.id} className="text-sm flex justify-between items-start group">
-                            <div>
-                                <p className="font-semibold">{m.description}</p>
-                                <p className="text-xs text-gray-500">{new Date(m.date).toLocaleDateString('he-IL')}</p>
+                    {sortedMilestones.map(m => {
+                        const date = new Date(m.date);
+                        const displayDate = isNaN(date.getTime()) 
+                            ? 'תאריך לא חוקי' 
+                            : date.toLocaleDateString('he-IL');
+                        
+                        return (
+                            <div key={m.id} className="text-sm flex justify-between items-start group">
+                                <div>
+                                    <p className="font-semibold">{m.description}</p>
+                                    <p className="text-xs text-gray-500">{displayDate}</p>
+                                </div>
+                                <button onClick={() => onDeleteMilestone(project.id, m.id)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700">
+                                    <XIcon className="w-4 h-4"/>
+                                </button>
                             </div>
-                            <button onClick={() => onDeleteMilestone(project.id, m.id)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700">
-                                <XIcon className="w-4 h-4"/>
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {sortedMilestones.length === 0 && <p className="text-sm text-gray-500">אין אבני דרך.</p>}
                 </div>
             </Card>

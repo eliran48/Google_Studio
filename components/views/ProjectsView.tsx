@@ -9,8 +9,6 @@ interface ProjectsViewProps {
   onProjectSelect: (projectId: string) => void;
   onEditProject: (project: Project) => void;
   onDeleteProject: (projectId: string, projectTitle: string) => void;
-  onAddProject: (defaults?: Partial<Project>) => void;
-  onAddTask: (defaults: Partial<Task>) => void;
 }
 
 const statusStyles: Record<ProjectStatus, { text: string, bg: string }> = {
@@ -30,7 +28,7 @@ const ProjectStatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => 
 };
 
 
-const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject, onAddProject, onAddTask }) => {
+const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectSelect, onEditProject, onDeleteProject }) => {
   const getProjectStats = (projectId: string) => {
     const projectTasks = tasks.filter(t => t.projectId === projectId);
     const completedTasks = projectTasks.filter(t => t.status === TaskStatus.DONE).length;
@@ -43,13 +41,6 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
     <div>
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">פרויקטים</h2>
-            <button
-                onClick={() => onAddProject()}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-                <PlusIcon className="w-5 h-5" />
-                <span>הוסף פרויקט</span>
-            </button>
         </div>
       {projects.length === 0 ? (
         <Card>
@@ -60,8 +51,8 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
           {projects.map(project => {
             const { totalTasks, progress } = getProjectStats(project.id);
             return (
-              <Card key={project.id} className="group hover:shadow-lg hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col p-0" >
-                <div className="p-4 flex-grow">
+              <Card key={project.id} className="group hover:shadow-lg hover:border-indigo-500 border-transparent border-2 transition-all flex flex-col p-4" >
+                <div className="flex-grow">
                     <div className="flex justify-between items-start">
                         <div onClick={() => onProjectSelect(project.id)} className="cursor-pointer flex-grow space-y-2">
                             <h3 className="text-xl font-bold mb-2 text-indigo-600 dark:text-indigo-400 flex-1 break-words pr-2">{project.title}</h3>
@@ -100,17 +91,6 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
                         <p className="text-xs text-gray-400">{project.customerIds?.length || 0} לקוחות</p>
                       </div>
                     </div>
-                </div>
-                <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-2">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAddTask({ projectId: project.id, type: TaskType.BUSINESS });
-                        }}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-md transition-colors text-indigo-700 bg-indigo-100 hover:bg-indigo-200 dark:text-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-900"
-                    >
-                        הוסף משימה
-                    </button>
                 </div>
               </Card>
             );

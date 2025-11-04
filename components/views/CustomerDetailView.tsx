@@ -12,12 +12,11 @@ interface CustomerDetailViewProps {
   onToggleStatus: (taskId: string) => void;
   onEditCustomer: (customer: Customer) => void;
   onDeleteCustomer: (customerId: string, customerName: string) => void;
-  onAddTask: (defaults: Partial<Task>) => void;
   onSaveUpdate: (customerId: string, updateText: string) => Promise<void>;
   onBack: () => void;
 }
 
-const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks, projects, onEditTask, onToggleStatus, onEditCustomer, onDeleteCustomer, onAddTask, onSaveUpdate, onBack }) => {
+const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks, projects, onEditTask, onToggleStatus, onEditCustomer, onDeleteCustomer, onSaveUpdate, onBack }) => {
     const customerProjects = projects.filter(p => p.customerIds?.includes(customer.id) || tasks.some(t => t.projectId === p.id && t.customerId === customer.id));
     const [newUpdateText, setNewUpdateText] = useState('');
     const [isSavingUpdate, setIsSavingUpdate] = useState(false);
@@ -31,8 +30,29 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
         setIsSavingUpdate(false);
     };
 
-    const sortedUpdates = (customer.updates || []).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sortedUpdates = (customer.updates || []).slice().sort((a, b) => {
+        const timeA = new Date(a.date).getTime();
+        const timeB = new Date(b.date).getTime();
+        if (isNaN(timeA)) return 1;
+        if (isNaN(timeB)) return -1;
+        return timeB - timeA;
+    });
     
+    const formatUpdateDate = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return 'תאריך לא חוקי';
+        }
+        return date.toLocaleDateString('he-IL', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
   return (
     <div className="space-y-6">
        <button 
@@ -53,9 +73,6 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
                 )}
             </div>
              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => onAddTask({ customerId: customer.id, type: TaskType.BUSINESS })} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="הוסף משימה ללקוח">
-                    <PlusIcon className="w-5 h-5" />
-                </button>
                 <button onClick={() => onEditCustomer(customer)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
                     <EditIcon className="w-5 h-5" />
                 </button>
@@ -96,12 +113,13 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
                         sortedUpdates.map((update, index) => (
                             <div key={index} className="pb-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                    {new Date(update.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    {formatUpdateDate(update.date)}
                                 </p>
                                 <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{update.text}</p>
                             </div>
                         ))
-                    ) : (
+                    )
+                    : (
                         <p className="text-sm text-center text-gray-500 dark:text-gray-400">אין עדכונים.</p>
                     )}
                 </div>

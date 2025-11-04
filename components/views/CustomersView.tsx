@@ -9,12 +9,9 @@ interface CustomersViewProps {
   onCustomerSelect: (customerId: string) => void;
   onEditCustomer: (customer: Customer) => void;
   onDeleteCustomer: (customerId: string, customerName: string) => void;
-  onAddCustomer: () => void;
-  onAddTask: (defaults: Partial<Task>) => void;
-  onAddProject: (defaults: Partial<Project>) => void;
 }
 
-const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCustomerSelect, onEditCustomer, onDeleteCustomer, onAddCustomer, onAddTask, onAddProject }) => {
+const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCustomerSelect, onEditCustomer, onDeleteCustomer }) => {
     const getCustomerTaskCount = (customerId: string) => {
         return tasks.filter(t => t.customerId === customerId && t.status !== TaskStatus.DONE).length;
     }
@@ -23,13 +20,6 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCusto
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">לקוחות</h2>
-        <button
-            onClick={onAddCustomer}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-            <PlusIcon className="w-5 h-5" />
-            <span>הוסף לקוח</span>
-        </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {customers.map(customer => (
@@ -61,20 +51,13 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCusto
             </div>
 
             {/* Body */}
-            <div className="p-4 flex-grow">
+            <div className="p-4 flex-grow cursor-pointer" onClick={() => onCustomerSelect(customer.id)}>
               <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">הערות כלליות</h4>
               <div className="text-sm text-gray-600 dark:text-gray-300 h-20 overflow-y-auto bg-gray-50 dark:bg-gray-800 p-2 rounded prose-sm">
                 <p className="whitespace-pre-wrap">{customer.generalNotes || 'אין הערות.'}</p>
               </div>
               <p className="mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{getCustomerTaskCount(customer.id)} משימות פעילות</p>
             </div>
-            
-            {/* Footer */}
-            <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-2">
-                <button onClick={() => onAddTask({ customerId: customer.id, type: TaskType.BUSINESS })} className="text-xs font-semibold px-3 py-1.5 rounded-md transition-colors text-indigo-700 bg-indigo-100 hover:bg-indigo-200 dark:text-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-900">הוסף משימה</button>
-                <button onClick={() => onAddProject({ customerIds: [customer.id] })} className="text-xs font-semibold px-3 py-1.5 rounded-md transition-colors text-teal-700 bg-teal-100 hover:bg-teal-200 dark:text-teal-200 dark:bg-teal-900/50 dark:hover:bg-teal-900">הוסף פרויקט</button>
-            </div>
-
           </Card>
         ))}
       </div>

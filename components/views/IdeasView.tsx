@@ -7,10 +7,8 @@ interface IdeasViewProps {
   ideas: Idea[];
   onIdeaSelect: (ideaId: string) => void;
   onConvertToProject: (idea: Idea) => void;
-  onAddIdea: () => void;
   onEditIdea: (idea: Idea) => void;
   onDeleteIdea: (idea: Idea) => void;
-  onAddTask: (defaults: Partial<Task>) => void;
 }
 
 const getBadgeStyle = (type: 'impact' | 'effort', value: IdeaImpact | IdeaEffort) => {
@@ -34,18 +32,11 @@ const InfoBadge: React.FC<{label: string; value: IdeaImpact | IdeaEffort; type: 
 );
 
 
-const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onIdeaSelect, onConvertToProject, onAddIdea, onEditIdea, onDeleteIdea, onAddTask }) => {
+const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onIdeaSelect, onConvertToProject, onEditIdea, onDeleteIdea }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">בנק רעיונות</h2>
-        <button
-            onClick={onAddIdea}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-            <PlusIcon className="w-5 h-5" />
-            <span>הוסף רעיון</span>
-        </button>
       </div>
       {ideas.length === 0 ? (
         <Card>
@@ -83,21 +74,12 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onIdeaSelect, onConvertToP
                      <InfoBadge label="השפעה" value={idea.impact || IdeaImpact.MEDIUM} type="impact" />
                      <InfoBadge label="מאמץ" value={idea.effort || IdeaEffort.MEDIUM} type="effort" />
                   </div>
-                   <div className="flex justify-between items-center gap-2 pt-2">
+                   <div className="flex justify-start items-center gap-2 pt-2">
                         <button 
                             onClick={() => onConvertToProject(idea)}
                             className="text-sm font-semibold text-indigo-500 hover:underline"
                             >
                             הפוך לפרויקט &rarr;
-                        </button>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onAddTask({ ideaId: idea.id, type: TaskType.BUSINESS });
-                            }}
-                            className="text-xs font-semibold px-3 py-1.5 rounded-md transition-colors text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-900"
-                            >
-                            הוסף משימה
                         </button>
                     </div>
               </div>

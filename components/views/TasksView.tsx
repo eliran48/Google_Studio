@@ -1,7 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Task, TaskStatus, TaskPriority } from '../../types';
 import Badge from '../ui/Badge';
-import { EditIcon, PlusIcon } from '../ui/Icons';
+import { EditIcon } from '../ui/Icons';
+
+const isToday = (dateStr: string | undefined | null): boolean => {
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return false;
+    
+    const today = new Date();
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate();
+};
+
 
 // A smaller Task Card for the Kanban view
 const TaskKanbanCard: React.FC<{ 
@@ -15,10 +27,20 @@ const TaskKanbanCard: React.FC<{
 }> = ({ task, onEditTask, onToggleStatus, onDragStart, onDragEnter, onDragEnd, isDragging }) => {
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'N/A';
-        return new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(dateString));
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return 'תאריך לא חוקי';
+        }
+        return new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(date);
     };
 
     const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
+
+    const completedToday = useMemo(() => {
+        if (task.status !== TaskStatus.DONE) return false;
+        return isToday(task.completedAt);
+    }, [task.status, task.completedAt]);
+
 
     return (
         <div 
@@ -29,9 +51,18 @@ const TaskKanbanCard: React.FC<{
             className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-3 cursor-move transition-opacity ${isDragging ? 'opacity-50' : 'opacity-100'}`}
         >
             <div className="flex justify-between items-start">
-                <p className={`font-bold break-words ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
-                    {task.title}
-                </p>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                         <p className={`font-bold break-words ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
+                            {task.title}
+                        </p>
+                        {completedToday && (
+                            <span className="text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded-full flex-shrink-0">
+                                היום
+                            </span>
+                        )}
+                    </div>
+                </div>
                 <button onClick={() => onEditTask(task)} className="text-gray-400 hover:text-indigo-600 flex-shrink-0 ml-2" aria-label={`ערוך משימה ${task.title}`}>
                     <EditIcon className="w-5 h-5" />
                 </button>
@@ -109,10 +140,9 @@ interface TasksViewProps {
     tasks: Task[];
     onEditTask: (task: Task) => void;
     onToggleStatus: (taskId: string) => void;
-    onAddTask: (defaults?: Partial<Task>) => void;
 }
 
-const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus, onAddTask }) => {
+const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus }) => {
     const [showCompleted, setShowCompleted] = useState(true);
 
     const [todoTasks, setTodoTasks] = useState<Task[]>([]);
@@ -131,23 +161,49 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus
             [TaskPriority.LOW]: 1,
         };
         
-        const sortedTasks = [...tasks].sort((a, b) => {
-          const priorityA = priorityOrder[a.priority];
-          const priorityB = priorityOrder[b.priority];
-          if (priorityB !== priorityA) {
-              return priorityB - priorityA;
-          }
-          if (a.dueDate && b.dueDate) {
-              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-          }
-          if (a.dueDate) return -1;
-          if (b.dueDate) return 1;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-
-        setTodoTasks(sortedTasks.filter(t => t.status === TaskStatus.TODO));
-        setInProgressTasks(sortedTasks.filter(t => t.status === TaskStatus.IN_PROGRESS));
-        setDoneTasks(sortedTasks.filter(t => t.status === TaskStatus.DONE));
+        const getSortableDate = (dateStr: string | undefined | null, fallback = Infinity): number => {
+            if (!dateStr) return fallback;
+            const time = new Date(dateStr).getTime();
+            return isNaN(time) ? fallback : time;
+        };
+    
+        const todos = tasks.filter(t => t.status === TaskStatus.TODO);
+        const inProgress = tasks.filter(t => t.status === TaskStatus.IN_PROGRESS);
+        const done = tasks.filter(t => t.status === TaskStatus.DONE);
+        
+        const sortOpenTasks = (arr: Task[]) => {
+            return arr.sort((a, b) => {
+                const priorityA = priorityOrder[a.priority];
+                const priorityB = priorityOrder[b.priority];
+                if (priorityB !== priorityA) return priorityB - priorityA;
+    
+                const dueA = getSortableDate(a.dueDate);
+                const dueB = getSortableDate(b.dueDate);
+                if (dueA !== dueB) return dueA - dueB;
+              
+                const createdA = getSortableDate(a.createdAt, 0);
+                const createdB = getSortableDate(b.createdAt, 0);
+                return createdA - createdB;
+            });
+        };
+    
+        const sortDoneTasks = (arr: Task[]) => {
+            return arr.sort((a, b) => {
+                const aIsToday = isToday(a.completedAt);
+                const bIsToday = isToday(b.completedAt);
+                
+                if (aIsToday && !bIsToday) return -1;
+                if (!aIsToday && bIsToday) return 1;
+    
+                const completedA = getSortableDate(a.completedAt, 0);
+                const completedB = getSortableDate(b.completedAt, 0);
+                return completedB - completedA;
+            });
+        };
+    
+        setTodoTasks(sortOpenTasks(todos));
+        setInProgressTasks(sortOpenTasks(inProgress));
+        setDoneTasks(sortDoneTasks(done));
     }, [tasks]);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, task: Task) => {
@@ -214,13 +270,6 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus
                         />
                         <span>הצג טור "הושלם"</span>
                     </label>
-                    <button
-                        onClick={() => onAddTask()}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        <span>הוסף משימה</span>
-                    </button>
                 </div>
             </div>
             <div className={`grid grid-cols-1 ${showCompleted ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>

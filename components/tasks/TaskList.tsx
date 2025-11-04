@@ -87,7 +87,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
         if (isNaN(date.getTime())) {
             return 'תאריך לא חוקי';
         }
-        return new Intl.DateTimeFormat('he-IL').format(date);
+        // Using UTC to prevent timezone-related off-by-one day errors
+        return new Intl.DateTimeFormat('he-IL', { timeZone: 'UTC' }).format(date);
     } catch (e) {
         return 'תאריך לא חוקי';
     }

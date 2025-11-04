@@ -9,7 +9,6 @@ interface IdeaDetailViewProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onToggleStatus: (taskId: string) => void;
-  onAddTask: (defaults: Partial<Task>) => void;
   onEditIdea: (idea: Idea) => void;
   onDeleteIdea: (idea: Idea) => void;
   onConvertToProject: (idea: Idea) => void;
@@ -29,7 +28,6 @@ const IdeaDetailView: React.FC<IdeaDetailViewProps> = ({
     tasks,
     onEditTask,
     onToggleStatus,
-    onAddTask,
     onEditIdea,
     onDeleteIdea,
     onConvertToProject,
@@ -54,9 +52,6 @@ const IdeaDetailView: React.FC<IdeaDetailViewProps> = ({
                 <p className="mt-2 text-gray-600 dark:text-gray-300 max-w-prose">{idea.description}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-                 <button onClick={() => onAddTask({ ideaId: idea.id, type: TaskType.BUSINESS })} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="הוסף משימה לרעיון">
-                    <PlusIcon className="w-5 h-5" />
-                </button>
                 <button onClick={() => onEditIdea(idea)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
                     <EditIcon className="w-5 h-5" />
                 </button>

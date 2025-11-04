@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { ViewType } from '../../types';
-import { DashboardIcon, ProjectIcon, CustomerIcon, IdeaIcon, ChecklistIcon, XIcon } from '../ui/Icons';
+import { DashboardIcon, ProjectIcon, CustomerIcon, IdeaIcon, ChecklistIcon, XIcon, SparklesIcon } from '../ui/Icons';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -16,6 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, setIsOp
     { view: 'projects', label: 'פרויקטים', icon: ProjectIcon },
     { view: 'customers', label: 'לקוחות', icon: CustomerIcon },
     { view: 'ideas', label: 'רעיונות', icon: IdeaIcon },
+    { view: 'enrichment', label: 'העשרה', icon: SparklesIcon },
   ] as const;
 
   const handleNavigation = (view: ViewType) => {
@@ -44,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, setIsOp
               <button
                 onClick={() => handleNavigation(view)}
                 className={`w-full flex items-center p-3 rounded-lg transition-colors ${
-                  currentView === view
+                  currentView.startsWith(view) && view !== 'dashboard' || currentView === view
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}

@@ -2,7 +2,7 @@ import React, { useState, ReactElement } from 'react';
 import { PlusIcon } from './Icons';
 
 export interface SpeedDialAction {
-  icon: ReactElement;
+  icon: ReactElement<{ className?: string }>;
   onClick: () => void;
   bgColor: string;
   ariaLabel: string;

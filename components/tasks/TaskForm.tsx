@@ -33,7 +33,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
       setType(task?.type || TaskType.PERSONAL);
       setCustomerId(task?.customerId);
       setProjectId(task?.projectId);
-      setDueDate(task?.dueDate ? task.dueDate.split('T')[0] : '');
+      
+      const getSafeDateString = (date: any): string => {
+        if (!date) return '';
+        if (typeof date === 'string') {
+            // Handle ISO string from DB or yyyy-mm-dd from input
+            return date.includes('T') ? date.split('T')[0] : date;
+        }
+        // Handle Firebase Timestamp
+        if (date.toDate && typeof date.toDate === 'function') {
+            return date.toDate().toISOString().split('T')[0];
+        }
+        // Handle JS Date object or other formats
+        try {
+            return new Date(date).toISOString().split('T')[0];
+        } catch (e) {
+            console.error("Could not parse date:", date);
+            return '';
+        }
+      };
+      
+      setDueDate(getSafeDateString(task?.dueDate));
       setPriority(task?.priority || TaskPriority.NORMAL);
       setStatus(task?.status || TaskStatus.TODO);
       setSubTasks(task?.subTasks || []);

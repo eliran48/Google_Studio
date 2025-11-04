@@ -3,6 +3,7 @@ import { Task, TaskStatus, Project, ViewType, TaskPriority, TaskType, ProjectSta
 import TaskList from '../tasks/TaskList';
 import Card from '../ui/Card';
 import { BriefcaseIcon, ChecklistIcon, ExclamationTriangleIcon, UserIcon } from '../ui/Icons';
+import DailyTasksList from '../dashboard/DailyTasksList';
 
 interface DashboardViewProps {
   tasks: Task[];
@@ -12,12 +13,14 @@ interface DashboardViewProps {
   onProjectSelect: (projectId: string) => void;
   setView: (view: ViewType) => void;
   userEmail: string | null;
+  onSetTaskDailyStatus: (taskId: string, isDaily: boolean) => void;
+  onReorderDailyTasks: (reorderedTasks: Task[]) => void;
 }
 
 const StatCard: React.FC<{
     title: string;
     value: number | string;
-    icon: React.ReactElement;
+    icon: React.ReactElement<{ className?: string }>;
     colors: { text: string; bg: string; border: string; };
     onClick?: () => void;
     isActive?: boolean
@@ -62,10 +65,13 @@ const UrgentTaskItem: React.FC<{ task: Task; onEditTask: (task: Task) => void; }
     );
 };
 
-const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTask, onToggleStatus, onProjectSelect, setView, userEmail }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ 
+    tasks, projects, onEditTask, onToggleStatus, onProjectSelect, setView, userEmail, onSetTaskDailyStatus, onReorderDailyTasks
+}) => {
   const [taskFilter, setTaskFilter] = useState<'all' | TaskType | TaskStatus>('all');
+  const [isDraggingOverDaily, setIsDraggingOverDaily] = useState(false);
   
-  const { filteredOpenTasks, stats, urgentAndOverdueTasks } = useMemo(() => {
+  const { filteredOpenTasks, stats, urgentAndOverdueTasks, dailyTasks } = useMemo(() => {
     const incompleteTasks = tasks.filter(t => t.status !== TaskStatus.DONE);
     const now = new Date();
 
@@ -80,10 +86,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
         const priorityA = priorityOrder[a.priority];
         const priorityB = priorityOrder[b.priority];
         if (priorityB !== priorityA) return priorityB - priorityA;
-        if (a.dueDate && b.dueDate) return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        if (a.dueDate) return -1;
-        if (b.dueDate) return 1;
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
+        const dateA_ms = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const dateB_ms = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        const dateA = isNaN(dateA_ms) ? Infinity : dateA_ms;
+        const dateB = isNaN(dateB_ms) ? Infinity : dateB_ms;
+        if (dateA !== dateB) return dateA - dateB;
+
+        const createdA_ms = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const createdB_ms = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        const createdA = isNaN(createdA_ms) ? 0 : createdA_ms;
+        const createdB = isNaN(createdB_ms) ? 0 : createdB_ms;
+        return createdA - createdB;
     });
 
     const filteredTasks = sortedOpenTasks.filter(task => {
@@ -107,9 +121,45 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
         overdue: overdueTasks.length
     };
     
-    return { filteredOpenTasks: filteredTasks, stats: statistics, urgentAndOverdueTasks: combinedUrgentAndOverdue };
+    const currentDailyTasks = tasks.filter(t => t.isDaily).sort((a,b) => (a.dailyOrder || 0) - (b.dailyOrder || 0));
+    
+    return { 
+        filteredOpenTasks: filteredTasks, 
+        stats: statistics, 
+        urgentAndOverdueTasks: combinedUrgentAndOverdue,
+        dailyTasks: currentDailyTasks
+    };
   }, [tasks, taskFilter]);
   
+  const handleDragEnterDaily = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('text/plain')) {
+        setIsDraggingOverDaily(true);
+    }
+  };
+
+  const handleDragLeaveDaily = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      if (e.currentTarget.contains(e.relatedTarget as Node)) {
+          return;
+      }
+      setIsDraggingOverDaily(false);
+  };
+
+  const handleDropOnDaily = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDraggingOverDaily(false);
+      const taskId = e.dataTransfer.getData('text/plain');
+      if (taskId && !dailyTasks.some(t => t.id === taskId)) {
+        onSetTaskDailyStatus(taskId, true);
+      }
+  };
+
+  const openNonDailyTasks = useMemo(() => {
+      return filteredOpenTasks.filter(t => !t.isDaily);
+  }, [filteredOpenTasks]);
+
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'בוקר טוב';
@@ -177,9 +227,23 @@ const DashboardView: React.FC<DashboardViewProps> = ({ tasks, projects, onEditTa
 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div 
+            className={`lg:col-span-1 p-2 rounded-xl transition-all duration-300 ${isDraggingOverDaily ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-2 ring-indigo-400 ring-dashed' : 'bg-transparent'}`}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDropOnDaily}
+            onDragEnter={handleDragEnterDaily}
+            onDragLeave={handleDragLeaveDaily}
+        >
+            <DailyTasksList 
+                tasks={dailyTasks}
+                onRemove={(taskId) => onSetTaskDailyStatus(taskId, false)}
+                onReorder={onReorderDailyTasks}
+                onEditTask={onEditTask}
+            />
+        </div>
+        <div className="lg:col-span-1">
             <TaskList
-              tasks={filteredOpenTasks}
+              tasks={openNonDailyTasks}
               title={`משימות פתוחות ${taskFilter !== 'all' ? `(${taskFilter})` : ''}`}
               onEditTask={onEditTask}
               onToggleStatus={onToggleStatus}
