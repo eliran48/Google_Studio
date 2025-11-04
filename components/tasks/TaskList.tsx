@@ -150,7 +150,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p id={`task-title-${task.id}`} className={`font-medium truncate ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
+                    <p id={`task-title-${task.id}`} className={`font-medium truncate ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
                       {task.title}
                     </p>
                     {task.description && (

@@ -54,7 +54,7 @@ const UrgentTaskItem: React.FC<{ task: Task; onEditTask: (task: Task) => void; }
             className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
         >
             <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{task.title}</p>
+                <p className="font-medium truncate text-gray-900 dark:text-gray-100">{task.title}</p>
             </div>
             {isOverdue ? (
                 <span className="text-xs font-semibold text-red-600 dark:text-red-400 ml-2 flex-shrink-0">עבר הזמן</span>

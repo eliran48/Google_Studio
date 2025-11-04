@@ -27,7 +27,7 @@ const DailyTaskItem: React.FC<{
             onDragEnd={onDragEnd}
             className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-all hover:shadow-md cursor-move group ${isDragging ? 'opacity-50 shadow-2xl scale-105' : 'opacity-100'}`}
         >
-            <p className="font-medium truncate flex-1 pr-2">{task.title}</p>
+            <p className="font-medium truncate flex-1 pr-2 text-gray-900 dark:text-gray-100">{task.title}</p>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={onEdit} className="text-gray-400 hover:text-indigo-600 p-1" aria-label="ערוך משימה">
                     <EditIcon className="w-4 h-4" />

@@ -53,7 +53,7 @@ const TaskKanbanCard: React.FC<{
             <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                         <p className={`font-bold break-words ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
+                         <p className={`font-bold break-words ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
                             {task.title}
                         </p>
                         {completedToday && (
