@@ -22,7 +22,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
         onClick={e => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
-          <h2 className="text-xl font-bold">{title}</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
         </div>
         <div className="p-6 overflow-y-auto flex-1">

@@ -110,7 +110,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         </div>
         <div className="space-y-6">
             <Card>
-                <h3 className="text-xl font-bold mb-4">פרטי הפרויקט</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">פרטי הפרויקט</h3>
                 <div className="grid grid-cols-2 gap-4">
                     <InfoItem label="סטטוס" value={project.status} />
                     <InfoItem label="תקציב" value={formatCurrency(project.budget)} />
@@ -119,7 +119,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 </div>
             </Card>
             <Card>
-                <h3 className="text-xl font-bold mb-4">אבני דרך</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">אבני דרך</h3>
                 <form onSubmit={handleMilestoneSubmit} className="flex gap-2 mb-4">
                     <input type="text" value={newMilestoneDesc} onChange={(e) => setNewMilestoneDesc(e.target.value)} placeholder="הוסף אבן דרך..." className="flex-grow p-2 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600" />
                     <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400" disabled={!newMilestoneDesc.trim()}>הוסף</button>
@@ -148,7 +148,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             </Card>
             <Card>
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold">קישורים חשובים</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">קישורים חשובים</h3>
                     <button onClick={() => setShowAddLinkForm(!showAddLinkForm)} className="text-indigo-600 hover:text-indigo-800">
                         <PlusIcon className="w-5 h-5" />
                     </button>
@@ -176,7 +176,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                  </div>
             </Card>
             <Card>
-                <h3 className="text-xl font-bold mb-4">לקוחות משויכים</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">לקוחות משויכים</h3>
                 {projectCustomers.length > 0 ? (
                     <ul className="space-y-2">
                         {projectCustomers.map(customer => (

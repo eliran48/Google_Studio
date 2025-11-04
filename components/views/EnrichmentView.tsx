@@ -69,7 +69,7 @@ const EnrichmentView: React.FC<EnrichmentViewProps> = ({ items, onEditItem, onDe
     return (
         <div>
             <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold">העשרה והשראה</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">העשרה והשראה</h2>
                 <div className="flex items-center gap-4">
                     <div className="flex-1">
                         <select 

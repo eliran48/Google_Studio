@@ -76,7 +76,7 @@ const IdeaDetailView: React.FC<IdeaDetailViewProps> = ({
         </div>
         <div className="space-y-6">
             <Card>
-                <h3 className="text-xl font-bold mb-4">פרטי הרעיון</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">פרטי הרעיון</h3>
                 <div className="grid grid-cols-1 gap-4">
                     <InfoItem label="קטגוריה" value={idea.category} />
                     <InfoItem label="השפעה (Impact)" value={idea.impact} />

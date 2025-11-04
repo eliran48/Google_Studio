@@ -89,7 +89,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
         </div>
         <div className="space-y-6">
             <Card>
-                <h3 className="text-xl font-bold mb-4">סיכומי שיחה / עדכונים</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">סיכומי שיחה / עדכונים</h3>
                 <form onSubmit={handleUpdateSubmit} className="space-y-2 mb-4">
                     <textarea
                         value={newUpdateText}
@@ -125,7 +125,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
                 </div>
             </Card>
             <Card>
-                <h3 className="text-xl font-bold mb-4">פרויקטים קשורים</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">פרויקטים קשורים</h3>
                 {customerProjects.length > 0 ? (
                     <ul className="space-y-2">
                         {customerProjects.map(project => (
@@ -138,7 +138,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, tasks
             </Card>
             {customer.generalNotes && (
                 <Card>
-                    <h3 className="text-xl font-bold mb-4">הערות כלליות</h3>
+                    <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">הערות כלליות</h3>
                     <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{customer.generalNotes}</p>
                 </Card>
             )}

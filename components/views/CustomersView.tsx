@@ -19,7 +19,7 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, tasks, onCusto
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">לקוחות</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">לקוחות</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {customers.map(customer => (

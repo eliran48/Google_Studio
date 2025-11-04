@@ -40,7 +40,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ projects, tasks, onProjectS
   return (
     <div>
         <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">פרויקטים</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">פרויקטים</h2>
         </div>
       {projects.length === 0 ? (
         <Card>

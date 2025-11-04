@@ -253,7 +253,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             <Card>
                 <div className="flex items-center gap-3 mb-4">
                     <ExclamationTriangleIcon className="w-6 h-6 text-red-500"/>
-                    <h3 className="text-xl font-bold">דחוף ובאיחור</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">דחוף ובאיחור</h3>
                 </div>
                 <div className="space-y-1 max-h-60 overflow-y-auto">
                     {urgentAndOverdueTasks.length > 0 ? urgentAndOverdueTasks.map(task => (
@@ -265,7 +265,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </Card>
 
             <Card>
-                <h3 className="text-xl font-bold mb-4">פרויקטים פעילים</h3>
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">פרויקטים פעילים</h3>
                 <div className="space-y-4">
                     {projects.filter(p => p.status === ProjectStatus.IN_PROGRESS).slice(0, 5).map(project => {
                         const { completedTasks, totalTasks, progress } = getProjectStats(project.id);

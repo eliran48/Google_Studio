@@ -36,7 +36,7 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onIdeaSelect, onConvertToP
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">בנק רעיונות</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">בנק רעיונות</h2>
       </div>
       {ideas.length === 0 ? (
         <Card>

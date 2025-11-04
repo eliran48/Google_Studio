@@ -259,7 +259,7 @@ const TasksView: React.FC<TasksViewProps> = ({ tasks, onEditTask, onToggleStatus
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">לוח משימות</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">לוח משימות</h2>
                 <div className="flex items-center gap-4">
                      <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                         <input 

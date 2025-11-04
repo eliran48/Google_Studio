@@ -97,7 +97,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold">{title}</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{title}</h3>
         {hasCompletedTasks && (
           <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-300">
             <input

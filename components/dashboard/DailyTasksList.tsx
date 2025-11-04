@@ -89,7 +89,7 @@ const DailyTasksList: React.FC<DailyTasksListProps> = ({ tasks, onRemove, onReor
     
     return (
         <Card className="h-full">
-            <h3 className="text-xl font-bold mb-4">היום</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">היום</h3>
             <div 
                 className="space-y-4"
                 onDrop={handleDrop}
