@@ -36,7 +36,7 @@ const EnrichmentCard: React.FC<{ item: EnrichmentItem; onEdit: (item: Enrichment
                     </div>
                 </div>
                 <h3 className="mt-2 text-lg font-bold text-gray-800 dark:text-gray-100">{item.title}</h3>
-                {item.description && <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 line-clamp-3">{item.description}</p>}
+                {item.description && <p className="mt-1 text-sm text-gray-600 dark:text-gray-200 line-clamp-3">{item.description}</p>}
             </div>
             <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
                 {item.url && (
@@ -75,7 +75,7 @@ const EnrichmentView: React.FC<EnrichmentViewProps> = ({ items, onEditItem, onDe
                         <select 
                             value={filter} 
                             onChange={(e) => setFilter(e.target.value as any)}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-700 dark:text-gray-200"
                         >
                             <option value="all">כל הסוגים</option>
                             {Object.values(EnrichmentType).map(type => (
