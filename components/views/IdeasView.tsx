@@ -63,7 +63,7 @@ const IdeasView: React.FC<IdeasViewProps> = ({ ideas, onIdeaSelect, onConvertToP
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate pr-16">{idea.title}</h3>
-                      <p className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full inline-block mt-1">{idea.category || IdeaCategory.PRODUCT}</p>
+                      <p className="text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-2 py-0.5 rounded-full inline-block mt-1">{idea.category || IdeaCategory.PRODUCT}</p>
                     </div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 mt-3 line-clamp-3">{idea.description}</p>

@@ -134,7 +134,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         return (
                             <div key={m.id} className="text-sm flex justify-between items-start group">
                                 <div>
-                                    <p className="font-semibold">{m.description}</p>
+                                    <p className="font-semibold text-gray-800 dark:text-gray-200">{m.description}</p>
                                     <p className="text-xs text-gray-500">{displayDate}</p>
                                 </div>
                                 <button onClick={() => onDeleteMilestone(project.id, m.id)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700">

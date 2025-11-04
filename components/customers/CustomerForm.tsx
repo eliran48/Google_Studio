@@ -58,7 +58,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, cu
     <Modal isOpen={isOpen} onClose={onClose} title={customer ? "עריכת לקוח" : "לקוח חדש"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">שם הלקוח</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">שם הלקוח</label>
           <input
             type="text"
             value={name}
@@ -68,7 +68,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, cu
           />
         </div>
         <div>
-            <label className="block mb-1 font-medium">סיווג</label>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">סיווג</label>
             <input
                 type="text"
                 value={classification}
@@ -78,7 +78,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ isOpen, onClose, onSave, cu
             />
         </div>
         <div>
-          <label className="block mb-1 font-medium">הערות כלליות</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">הערות כלליות</label>
           <textarea
             value={generalNotes}
             onChange={(e) => setGeneralNotes(e.target.value)}

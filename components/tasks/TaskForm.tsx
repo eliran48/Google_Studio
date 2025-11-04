@@ -115,22 +115,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
     <Modal isOpen={isOpen} onClose={onClose} title={task?.id ? 'עריכת משימה' : 'משימה חדשה'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">כותרת</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">כותרת</label>
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} className={commonInputClasses} required />
         </div>
         <div>
-          <label className="block mb-1 font-medium">תיאור</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תיאור</label>
           <textarea value={description} onChange={e => setDescription(e.target.value)} className={commonInputClasses} rows={3}></textarea>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 font-medium">סוג משימה</label>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">סוג משימה</label>
               <select value={type} onChange={e => setType(e.target.value as TaskType)} className={commonInputClasses}>
                 {Object.values(TaskType).map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="block mb-1 font-medium">דחיפות</label>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">דחיפות</label>
               <select value={priority} onChange={e => setPriority(e.target.value as TaskPriority)} className={commonInputClasses}>
                 {Object.values(TaskPriority).map(p => <option key={p} value={p}>{p}</option>)}
               </select>
@@ -138,27 +138,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label className="block mb-1 font-medium">סטטוס</label>
+                <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">סטטוס</label>
                 <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)} className={commonInputClasses}>
                     {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
             </div>
             <div>
-                <label className="block mb-1 font-medium">תאריך יעד</label>
+                <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תאריך יעד</label>
                 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={commonInputClasses} />
             </div>
         </div>
         {type === TaskType.BUSINESS && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 font-medium">לקוח</label>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">לקוח</label>
               <select value={customerId || ''} onChange={e => setCustomerId(e.target.value || undefined)} className={commonInputClasses}>
                 <option value="">בחר לקוח</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block mb-1 font-medium">פרויקט</label>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">פרויקט</label>
               <select value={projectId || ''} onChange={e => setProjectId(e.target.value || undefined)} className={commonInputClasses}>
                 <option value="">בחר פרויקט</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
@@ -169,7 +169,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSave, task, proj
         
         {/* Sub-tasks section */}
         <div className="pt-4 border-t dark:border-gray-700">
-            <label className="block mb-2 font-medium">תתי-משימות</label>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-200">תתי-משימות</label>
             <div className="flex gap-2 mb-3">
                 <input 
                     type="text" 

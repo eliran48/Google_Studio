@@ -64,7 +64,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
     <Modal isOpen={isOpen} onClose={onClose} title={idea ? 'עריכת רעיון' : 'רעיון חדש'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">כותרת הרעיון</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">כותרת הרעיון</label>
           <input
             type="text"
             value={title}
@@ -74,7 +74,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">תיאור</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תיאור</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -85,19 +85,19 @@ const IdeaForm: React.FC<IdeaFormProps> = ({ isOpen, onClose, onSave, idea }) =>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label className="block mb-1 font-medium">קטגוריה</label>
+                <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">קטגוריה</label>
                 <select value={category} onChange={e => setCategory(e.target.value as IdeaCategory)} className={commonInputClasses}>
                     {Object.values(IdeaCategory).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
             </div>
              <div>
-                <label className="block mb-1 font-medium">השפעה</label>
+                <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">השפעה</label>
                 <select value={impact} onChange={e => setImpact(e.target.value as IdeaImpact)} className={commonInputClasses}>
                     {Object.values(IdeaImpact).map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
             </div>
              <div>
-                <label className="block mb-1 font-medium">מאמץ</label>
+                <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">מאמץ</label>
                 <select value={effort} onChange={e => setEffort(e.target.value as IdeaEffort)} className={commonInputClasses}>
                     {Object.values(IdeaEffort).map(e => <option key={e} value={e}>{e}</option>)}
                 </select>

@@ -86,7 +86,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
     <Modal isOpen={isOpen} onClose={onClose} title={project?.id ? "עריכת פרויקט" : "פרויקט חדש"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">שם הפרויקט</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">שם הפרויקט</label>
           <input
             type="text"
             value={title}
@@ -96,7 +96,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">תיאור</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תיאור</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -106,13 +106,13 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block mb-1 font-medium">סטטוס</label>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">סטטוס</label>
             <select value={status} onChange={e => setStatus(e.target.value as ProjectStatus)} className={commonInputClasses}>
               {Object.values(ProjectStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label className="block mb-1 font-medium">תקציב (₪)</label>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תקציב (₪)</label>
              <input
               type="number"
               value={budget}
@@ -124,17 +124,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
         </div>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block mb-1 font-medium">תאריך התחלה</label>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תאריך התחלה</label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={commonInputClasses} />
           </div>
           <div>
-            <label className="block mb-1 font-medium">תאריך סיום</label>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תאריך סיום</label>
             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={commonInputClasses} />
           </div>
         </div>
         
         <div>
-          <label className="block mb-1 font-medium">שיוך לקוחות</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">שיוך לקוחות</label>
           <div className="relative" ref={dropdownRef}>
             <button 
               type="button" 
@@ -156,7 +156,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
                       onChange={() => handleCustomerSelection(customer.id)}
                       className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span>{customer.name}</span>
+                    <span className="text-gray-900 dark:text-gray-100">{customer.name}</span>
                   </label>
                 )) : <div className="px-4 py-2 text-sm text-gray-500">אין לקוחות להצגה.</div>}
               </div>

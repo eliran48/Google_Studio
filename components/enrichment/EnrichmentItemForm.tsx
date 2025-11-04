@@ -68,33 +68,33 @@ const EnrichmentItemForm: React.FC<EnrichmentItemFormProps> = ({ isOpen, onClose
     <Modal isOpen={isOpen} onClose={onClose} title={item ? 'עריכת פריט העשרה' : 'פריט העשרה חדש'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">כותרת</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">כותרת</label>
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} className={commonInputClasses} required />
         </div>
         <div>
-          <label className="block mb-1 font-medium">קישור (URL)</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">קישור (URL)</label>
           <input type="url" value={url} onChange={e => setUrl(e.target.value)} className={commonInputClasses} placeholder="https://example.com"/>
         </div>
         <div>
-          <label className="block mb-1 font-medium">תיאור</label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תיאור</label>
           <textarea value={description} onChange={e => setDescription(e.target.value)} className={commonInputClasses} rows={3}></textarea>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 font-medium">סוג</label>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">סוג</label>
               <select value={type} onChange={e => setType(e.target.value as EnrichmentType)} className={commonInputClasses}>
                 {Object.values(EnrichmentType).map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="block mb-1 font-medium">סטטוס</label>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">סטטוס</label>
               <select value={status} onChange={e => setStatus(e.target.value as EnrichmentStatus)} className={commonInputClasses}>
                 {Object.values(EnrichmentStatus).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
         </div>
         <div>
-            <label className="block mb-1 font-medium">תגיות (מופרד בפסיק)</label>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-200">תגיות (מופרד בפסיק)</label>
             <input type="text" value={tags} onChange={e => setTags(e.target.value)} className={commonInputClasses} placeholder="פרודוקטיביות, שיווק, AI"/>
         </div>
         
