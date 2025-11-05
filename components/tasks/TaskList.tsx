@@ -131,20 +131,19 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
               <div 
                 key={task.id} 
                 draggable
+                onDoubleClick={() => onEditTask(task)}
                 onDragStart={(e) => handleDragStart(e, task)}
                 onDragEnter={() => handleDragEnter(task)}
                 onDragEnd={handleDragEnd}
                 className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-all hover:shadow-md cursor-move ${isDragging ? 'opacity-50 shadow-2xl scale-105' : 'opacity-100'}`}
               >
                 <div className="flex items-start gap-4 flex-1 min-w-0">
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div>
                     <input
+                      draggable={false}
                       type="checkbox"
                       checked={task.status === TaskStatus.DONE}
-                      onChange={(e) => {
-                        e.preventDefault();
-                        onToggleStatus(task.id);
-                      }}
+                      onChange={() => onToggleStatus(task.id)}
                       className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer mt-1 flex-shrink-0"
                       aria-labelledby={`task-title-${task.id}`}
                     />
@@ -172,10 +171,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
                     )}
                     <Badge priority={task.priority} />
                     <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditTask(task);
-                      }} 
+                      draggable={false}
+                      onClick={() => onEditTask(task)}
                       className="text-gray-400 hover:text-indigo-600" aria-label={`ערוך משימה ${task.title}`}
                     >
                         <EditIcon className="w-5 h-5" />

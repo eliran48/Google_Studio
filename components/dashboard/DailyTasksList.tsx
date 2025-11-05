@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Task } from '../../types';
+import { Task, TaskStatus } from '../../types';
 import Card from '../ui/Card';
 import { XIcon, EditIcon } from '../ui/Icons';
 
@@ -8,31 +8,52 @@ interface DailyTasksListProps {
   onRemove: (taskId: string) => void;
   onReorder: (reorderedTasks: Task[]) => void;
   onEditTask: (task: Task) => void;
+  onToggleStatus: (taskId: string) => void;
 }
 
 const DailyTaskItem: React.FC<{
     task: Task;
     onRemove: () => void;
     onEdit: () => void;
+    onToggleStatus: () => void;
     onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragEnter: () => void;
     onDragEnd: () => void;
     isDragging: boolean;
-}> = ({ task, onRemove, onEdit, onDragStart, onDragEnter, onDragEnd, isDragging }) => {
+}> = ({ task, onRemove, onEdit, onToggleStatus, onDragStart, onDragEnter, onDragEnd, isDragging }) => {
     return (
         <div
             draggable
+            onDoubleClick={onEdit}
             onDragStart={onDragStart}
             onDragEnter={onDragEnter}
             onDragEnd={onDragEnd}
             className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-all hover:shadow-md cursor-move group ${isDragging ? 'opacity-50 shadow-2xl scale-105' : 'opacity-100'}`}
         >
-            <p className="font-medium truncate flex-1 pr-2 text-gray-900 dark:text-gray-100">{task.title}</p>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={onEdit} className="text-gray-400 hover:text-indigo-600 p-1" aria-label="ערוך משימה">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+                <input
+                  draggable={false}
+                  type="checkbox"
+                  checked={task.status === TaskStatus.DONE}
+                  onChange={onToggleStatus}
+                  className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer flex-shrink-0"
+                  aria-label={`סמן את המשימה ${task.title} כהושלמה`}
+                />
+                <p className={`font-medium truncate text-gray-900 dark:text-gray-100 ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
+                    {task.title}
+                </p>
+            </div>
+            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                    draggable={false}
+                    onClick={onEdit}
+                    className="text-gray-400 hover:text-indigo-600 p-1" aria-label="ערוך משימה">
                     <EditIcon className="w-4 h-4" />
                 </button>
-                <button onClick={onRemove} className="text-gray-400 hover:text-red-600 p-1" aria-label="הסר מהרשימה היומית">
+                <button
+                    draggable={false}
+                    onClick={onRemove}
+                    className="text-gray-400 hover:text-red-600 p-1" aria-label="הסר מהרשימה היומית">
                     <XIcon className="w-4 h-4" />
                 </button>
             </div>
@@ -40,7 +61,7 @@ const DailyTaskItem: React.FC<{
     );
 };
 
-const DailyTasksList: React.FC<DailyTasksListProps> = ({ tasks, onRemove, onReorder, onEditTask }) => {
+const DailyTasksList: React.FC<DailyTasksListProps> = ({ tasks, onRemove, onReorder, onEditTask, onToggleStatus }) => {
     const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
     const draggedTaskRef = useRef<Task | null>(null);
     const dragOverTaskRef = useRef<Task | null>(null);
@@ -102,6 +123,7 @@ const DailyTasksList: React.FC<DailyTasksListProps> = ({ tasks, onRemove, onReor
                             task={task}
                             onRemove={() => onRemove(task.id)}
                             onEdit={() => onEditTask(task)}
+                            onToggleStatus={() => onToggleStatus(task.id)}
                             onDragStart={(e) => handleDragStart(e, task)}
                             onDragEnter={() => handleDragEnter(task)}
                             onDragEnd={handleDragEnd}

@@ -45,6 +45,7 @@ const TaskKanbanCard: React.FC<{
     return (
         <div 
             draggable
+            onDoubleClick={() => onEditTask(task)}
             onDragStart={onDragStart}
             onDragEnter={onDragEnter}
             onDragEnd={onDragEnd}

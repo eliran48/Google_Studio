@@ -239,6 +239,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 onRemove={(taskId) => onSetTaskDailyStatus(taskId, false)}
                 onReorder={onReorderDailyTasks}
                 onEditTask={onEditTask}
+                onToggleStatus={onToggleStatus}
             />
         </div>
         <div className="lg:col-span-1">
