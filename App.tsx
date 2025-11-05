@@ -138,13 +138,21 @@ const App: React.FC = () => {
     const handleSaveTask = async (taskData: Partial<Task>) => {
         if (!user) return;
         const collectionPath = `users/${user.uid}/tasks`;
-        if (taskData.id) {
-            const taskDocRef = doc(db, collectionPath, taskData.id);
-            await updateDoc(taskDocRef, taskData);
-            setTasks(tasks.map(t => t.id === taskData.id ? { ...t, ...taskData } as Task : t));
+
+        // Create a clean object for Firestore by removing keys with undefined values
+        const cleanData = Object.fromEntries(Object.entries(taskData).filter(([_, v]) => v !== undefined));
+
+        if (cleanData.id) {
+            const taskId = cleanData.id as string;
+            delete cleanData.id; // Do not write the id field into the document
+            const taskDocRef = doc(db, collectionPath, taskId);
+            await updateDoc(taskDocRef, cleanData);
+            // Update local state with the original data passed to the function
+            setTasks(tasks.map(t => t.id === taskId ? { ...t, ...taskData } as Task : t));
         } else {
-            const docRef = await addDoc(collection(db, collectionPath), { ...taskData, createdAt: new Date().toISOString() });
-            setTasks([...tasks, { ...taskData, id: docRef.id, createdAt: new Date().toISOString() } as Task]);
+            const docData = { ...cleanData, createdAt: new Date().toISOString() };
+            const docRef = await addDoc(collection(db, collectionPath), docData);
+            setTasks(prevTasks => [...prevTasks, { ...docData, id: docRef.id } as Task]);
         }
     };
     
