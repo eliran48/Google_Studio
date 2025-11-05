@@ -42,7 +42,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ isOpen, onClose, onSave, proj
         setStatus(project?.status || ProjectStatus.NOT_STARTED);
         setStartDate(project?.startDate ? project.startDate.split('T')[0] : '');
         setEndDate(project?.endDate ? project.endDate.split('T')[0] : '');
-        setBudget(project?.budget || '');
+        setBudget(project?.budget ?? '');
     }
   }, [project, isOpen]);
 

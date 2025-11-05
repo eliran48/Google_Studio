@@ -216,22 +216,23 @@ const App: React.FC = () => {
     ) => async (itemData: Partial<Omit<T, 'id'>> & { id?: string }) => {
         if (!user) return;
         const collectionPath = `users/${user.uid}/${collectionName}`;
+
+        const cleanData = Object.fromEntries(Object.entries(itemData).filter(([_, v]) => v !== undefined));
+
         if (itemData.id) {
             const itemDocRef = doc(db, collectionPath, itemData.id);
-            await updateDoc(itemDocRef, itemData);
+            const { id, ...dataToUpdate } = cleanData;
+            await updateDoc(itemDocRef, dataToUpdate);
             setState(state.map(i => i.id === itemData.id ? { ...i, ...itemData } as T : i));
         } else {
-            // Destructure to remove the `id` property for new items, which would be `undefined` and cause a Firestore error.
-            const { id, ...dataToSave } = itemData;
+            const { id, ...dataToSave } = cleanData;
             
-            // For new enrichment items, `createdAt` is a required field but not supplied by the form, so we add it here.
-            if (collectionName === 'enrichments') {
+            if (collectionName === 'enrichments' && !('createdAt' in dataToSave)) {
                 (dataToSave as Partial<EnrichmentItem>).createdAt = new Date().toISOString();
             }
 
             const docRef = await addDoc(collection(db, collectionPath), dataToSave);
-            // Update local state with the newly created item, including the Firestore-generated ID.
-            setState([...state, { ...dataToSave, id: docRef.id } as unknown as T]);
+            setState([...state, { ...itemData, ...dataToSave, id: docRef.id } as unknown as T]);
         }
     };
     
