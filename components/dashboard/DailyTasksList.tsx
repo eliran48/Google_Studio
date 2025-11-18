@@ -39,11 +39,11 @@ const DailyTaskItem: React.FC<{
                   className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer flex-shrink-0"
                   aria-label={`סמן את המשימה ${task.title} כהושלמה`}
                 />
-                <p className={`font-medium truncate text-gray-900 dark:text-gray-100 ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
+                <p className={`font-medium break-words whitespace-normal text-gray-900 dark:text-gray-100 ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : ''}`}>
                     {task.title}
                 </p>
             </div>
-            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                 <button 
                     draggable={false}
                     onClick={onEdit}

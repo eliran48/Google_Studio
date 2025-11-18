@@ -149,11 +149,11 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p id={`task-title-${task.id}`} className={`font-medium truncate ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
+                    <p id={`task-title-${task.id}`} className={`font-medium break-words whitespace-normal ${task.status === TaskStatus.DONE ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
                       {task.title}
                     </p>
                     {task.description && (
-                       <p className={`text-sm text-gray-500 dark:text-gray-400 truncate ${task.status === TaskStatus.DONE ? 'line-through' : ''}`}>
+                       <p className={`text-sm text-gray-500 dark:text-gray-400 break-words whitespace-normal ${task.status === TaskStatus.DONE ? 'line-through' : ''}`}>
                         {task.description}
                       </p>
                     )}
@@ -162,7 +162,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, title, onEditTask, onToggleS
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 pl-2">
+                <div className="flex items-center gap-4 pl-2 flex-shrink-0">
                     {hasSubTasks && (
                         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400" title="התקדמות תתי-משימות">
                             <ChecklistIcon className="w-4 h-4" />

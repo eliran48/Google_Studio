@@ -105,36 +105,6 @@ const App: React.FC = () => {
         fetchData();
     }, [user]);
 
-    useEffect(() => {
-        if (!user || tasks.length === 0) return;
-
-        const checkAndClearDailyTasks = async () => {
-            const lastClearedKey = `lastClearedDate_${user.uid}`;
-            const lastClearedDate = localStorage.getItem(lastClearedKey);
-            const today = new Date().toISOString().split('T')[0];
-
-            if (lastClearedDate !== today) {
-                console.log("New day detected, clearing daily tasks...");
-                const dailyTasksToClear = tasks.filter(t => t.isDaily);
-                
-                if (dailyTasksToClear.length > 0) {
-                    const batch = writeBatch(db);
-                    dailyTasksToClear.forEach(task => {
-                        const taskDocRef = doc(db, `users/${user.uid}/tasks`, task.id);
-                        batch.update(taskDocRef, { isDaily: false, dailyOrder: -1 });
-                    });
-                    await batch.commit();
-                    
-                    setTasks(prevTasks => prevTasks.map(t => dailyTasksToClear.find(dt => dt.id === t.id) ? { ...t, isDaily: false, dailyOrder: -1 } : t));
-                }
-                
-                localStorage.setItem(lastClearedKey, today);
-            }
-        };
-
-        checkAndClearDailyTasks();
-    }, [user, tasks]);
-
     const handleSaveTask = async (taskData: Partial<Task>) => {
         if (!user) return;
         const collectionPath = `users/${user.uid}/tasks`;
